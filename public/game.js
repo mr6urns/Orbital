@@ -938,34 +938,10 @@ function updatePlayer(delta) {
         if (isMoving) {
             walkCycle += walkSpeed * delta;
             
-            const leftLegJoint = player.children[5];
-            const rightLegJoint = player.children[6];
-            const leftArmJoint = player.children[3];
-            const rightArmJoint = player.children[4];
-            
-            if (leftLegJoint) leftLegJoint.rotation.x = Math.sin(walkCycle) * legAmplitude;
-            if (rightLegJoint) rightLegJoint.rotation.x = Math.sin(walkCycle + Math.PI) * legAmplitude;
-            if (leftArmJoint) leftArmJoint.rotation.x = Math.sin(walkCycle + Math.PI) * armSwingAmplitude;
-            if (rightArmJoint && !isRightArmSwinging) {
-                rightArmJoint.rotation.x = Math.sin(walkCycle) * armSwingAmplitude;
-            }
-        } else {
-            // Reset limb positions when not moving
-            const leftLegJoint = player.children[5];
-            const rightLegJoint = player.children[6];
-            const leftArmJoint = player.children[3];
-            const rightArmJoint = player.children[4];
-            
-            if (leftLegJoint) leftLegJoint.rotation.x = 0;
-            if (rightLegJoint) rightLegJoint.rotation.x = 0;
-            if (leftArmJoint) leftArmJoint.rotation.x = 0;
-            if (rightArmJoint) rightArmJoint.rotation.x = 0;
-        }
-    }
-}
-            const rightLeg = player.children[7];  // Right leg
-            const leftArm = player.children[4];   // Left arm
-            const rightArm = player.children[5];  // Right arm
+            const leftLeg = player.children[5];
+            const rightLeg = player.children[6];
+            const leftArm = player.children[3];
+            const rightArm = player.children[4];
             
             if (leftLeg && rightLeg && leftArm && rightArm) {
                 leftLeg.rotation.x = Math.sin(walkCycle) * legAmplitude;
@@ -975,10 +951,10 @@ function updatePlayer(delta) {
             }
         } else {
             // Reset limb positions when not moving
-            const leftLeg = player.children[6];
-            const rightLeg = player.children[7];
-            const leftArm = player.children[4];
-            const rightArm = player.children[5];
+            const leftLeg = player.children[5];
+            const rightLeg = player.children[6];
+            const leftArm = player.children[3];
+            const rightArm = player.children[4];
             
             if (leftLeg && rightLeg && leftArm && rightArm) {
                 leftLeg.rotation.x = 0;
@@ -988,6 +964,7 @@ function updatePlayer(delta) {
             }
         }
     }
+}
 
 function updateCamera() {
     currentCameraRotation.slerp(targetCameraRotation, cameraSmoothness);
