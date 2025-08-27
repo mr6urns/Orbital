@@ -903,15 +903,9 @@ function updatePlayer(delta) {
     // Hexagonal barrier check - prevent movement outside the hexagon
     const barrierRadius = hexMapRadius - 11;
     if (!isInsideHexagon(nextPosition.x, nextPosition.z, barrierRadius)) {
-        // Find the closest point on the hexagon boundary
-        // For simplicity, push back towards center
-        const distance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
-        const direction = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
-        
-        // Scale back to be just inside the hexagon
-        const scaleFactor = (barrierRadius * 0.95) / distance;
-        nextPosition.x = nextPosition.x * scaleFactor;
-        nextPosition.z = nextPosition.z * scaleFactor;
+        // Stop movement - don't allow position to change
+        nextPosition.x = player.position.x;
+        nextPosition.z = player.position.z;
         playerVelocity.x = 0;
         playerVelocity.z = 0;
     }
