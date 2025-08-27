@@ -297,6 +297,23 @@ function createBarrierWall() {
 const barrierWall = createBarrierWall();
 scene.add(barrierWall);
 
+// Create invisible solid barrier 1 meter inside the visible barrier
+function createInvisibleBarrier() {
+    const invisibleBarrierRadius = hexMapRadius - 5; // 1 meter inside the visible barrier
+    
+    // Create invisible barrier object (no visual mesh, just collision data)
+    const invisibleBarrier = {
+        type: 'invisible_barrier',
+        solid: true,
+        radius: invisibleBarrierRadius,
+        center: new THREE.Vector3(0, 0, 0)
+    };
+    
+    return invisibleBarrier;
+}
+
+const invisibleBarrier = createInvisibleBarrier();
+
 // Health system
 const maxHealth = 100;
 let currentHealth = maxHealth;
@@ -856,18 +873,16 @@ function updatePlayer(delta) {
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Barrier collision - treat as solid physical object
-    const distanceFromCenter = Math.sqrt(
-        Math.pow(nextPosition.x - hexMap.center.x, 2) + 
-        Math.pow(nextPosition.z - hexMap.center.z, 2)
+    // Invisible barrier collision - completely solid and impassable
+    const distanceFromCenterInvisible = Math.sqrt(
+        Math.pow(nextPosition.x - invisibleBarrier.center.x, 2) + 
+        Math.pow(nextPosition.z - invisibleBarrier.center.z, 2)
     );
     
-    // Check collision with barrier wall - solid physical object
-    const barrierDistance = hexMapRadius - 4;
-    if (distanceFromCenter >= barrierDistance) {
+    if (distanceFromCenterInvisible >= invisibleBarrier.radius) {
         // Calculate direction from center to player
-        const directionX = nextPosition.x - hexMap.center.x;
-        const directionZ = nextPosition.z - hexMap.center.z;
+        const directionX = nextPosition.x - invisibleBarrier.center.x;
+        const directionZ = nextPosition.z - invisibleBarrier.center.z;
         const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
         
         if (length > 0) {
@@ -875,22 +890,28 @@ function updatePlayer(delta) {
             const normalX = directionX / length;
             const normalZ = directionZ / length;
             
-            // Clamp position to barrier boundary
-            nextPosition.x = hexMap.center.x + normalX * (barrierDistance - 0.5);
-            nextPosition.z = hexMap.center.z + normalZ * (barrierDistance - 0.5);
+            // Hard clamp position to invisible barrier boundary
+            nextPosition.x = invisibleBarrier.center.x + normalX * (invisibleBarrier.radius - 0.1);
+            nextPosition.z = invisibleBarrier.center.z + normalZ * (invisibleBarrier.radius - 0.1);
             
-            // Remove velocity components that would push through barrier
+            // Stop all movement through the barrier
             const velocityDotNormal = playerVelocity.x * normalX + playerVelocity.z * normalZ;
             if (velocityDotNormal > 0) {
                 playerVelocity.x -= normalX * velocityDotNormal;
                 playerVelocity.z -= normalZ * velocityDotNormal;
             }
             
-            // Add pushback force
-            playerVelocity.x -= normalX * 5;
-            playerVelocity.z -= normalZ * 5;
+            // Strong pushback force
+            playerVelocity.x -= normalX * 10;
+            playerVelocity.z -= normalZ * 10;
         }
     }
+    
+    // Original visible barrier collision (now just for visual reference)
+    const distanceFromCenter = Math.sqrt(
+        Math.pow(nextPosition.x - hexMap.center.x, 2) + 
+        Math.pow(nextPosition.z - hexMap.center.z, 2)
+    );
     
     let terrainHeight = mapHeight;
     
