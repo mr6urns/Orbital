@@ -233,13 +233,41 @@ function createBarrierWall() {
     
     const barrierGeometry = new THREE.ExtrudeGeometry(hexShape, extrudeSettings);
     const barrierMaterial = new THREE.MeshBasicMaterial({
-        color: 0x38bdf8,
+    // Create gradient material with vertex shader for opacity fade
+    const barrierMaterial = new THREE.ShaderMaterial({
         transparent: true,
-        opacity: 0.1,
         side: THREE.DoubleSide,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
-    });
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+            color: { value: new THREE.Color(0x38bdf8) },
+            opacity: { value: 0.1 },
+            wallHeight: { value: wallHeight }
+        },
+        vertexShader: `
+            varying float vHeight;
+            void main() {
+                vHeight = position.z; // Z is height after rotation
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform vec3 color;
+            uniform float opacity;
+            uniform float wallHeight;
+            varying float vHeight;
+            
+            void main() {
+                // Calculate fade based on height (0 at bottom, 1 at top)
+                float heightFactor = vHeight / wallHeight;
+                heightFactor = clamp(heightFactor, 0.0, 1.0);
+                
+                // Fade out towards the top (inverse of height)
+                float alpha = opacity * (1.0 - heightFactor);
+                
+                gl_FragColor = vec4(color, alpha);
+            }
+        `
     
     const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
     barrier.position.set(0, mapHeight, 0);
@@ -247,6 +275,7 @@ function createBarrierWall() {
     
     barrier.userData = {
         originalOpacity: 0.1,
+        material: barrierMaterial,
         pulseSpeed: 0.5
     };
     
@@ -952,7 +981,7 @@ function animate(currentTime) {
             // Animate hollow hexagon wall with subtle pulsing
             barrierWall.userData.pulseOffset = (barrierWall.userData.pulseOffset || 0) + barrierWall.userData.pulseSpeed * fixedTimeStep;
             const pulse = (Math.sin(barrierWall.userData.pulseOffset) + 1) * 0.5;
-            barrierWall.material.opacity = barrierWall.userData.originalOpacity * (0.7 + pulse * 0.3);
+            barrierWall.userData.material.uniforms.opacity.value = barrierWall.userData.originalOpacity * (0.7 + pulse * 0.3);
         }
         
         // Rotate starfield slowly
