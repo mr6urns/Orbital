@@ -1,5 +1,5 @@
 // Debug logging
-console.log('Explore Game.js loading...');
+console.log('Game.js loading...');
 
 import * as THREE from 'three';
 import { createNoise2D, createNoise3D } from 'simplex-noise';
@@ -423,37 +423,6 @@ function updateImpactEffects(delta) {
     }
 }
 
-// Helper function to check if a point is inside a hexagon
-function isInsideHexagon(x, z, radius) {
-    // Use the same logic as terrain generation to be perfectly consistent
-    const hexRadius = 0.866;
-    const segments = Math.ceil(radius / (hexRadius * 2));
-    
-    // Check if this position would be within the generated terrain
-    for (let q = -segments; q <= segments; q++) {
-        for (let r = Math.max(-segments, -q-segments); r <= Math.min(segments, -q+segments); r++) {
-            const s = -q - r;
-            
-            if (Math.abs(s) <= segments) {
-                const hexX = hexRadius * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r);
-                const hexZ = hexRadius * (3/2 * r);
-                
-                const distanceFromCenter = Math.sqrt(hexX*hexX + hexZ*hexZ);
-                
-                if (distanceFromCenter <= radius) {
-                    // Check if player position is close to this hex position
-                    const distanceToHex = Math.sqrt((x - hexX) * (x - hexX) + (z - hexZ) * (z - hexZ));
-                    if (distanceToHex < hexRadius * 1.5) {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-    
-    return false;
-}
-
 function checkTerrainCollision(position, hexMap) {
     // Check hexagonal barrier collision for projectiles using exact terrain boundary
     if (!isInsideHexagon(position.x, position.z, hexMapRadius)) {
@@ -831,6 +800,37 @@ if (isMobile) {
             targetCameraRotation.setFromEuler(euler);
         }
     });
+}
+
+// Helper function to check if a point is inside a hexagon
+function isInsideHexagon(x, z, radius) {
+    // Use the same logic as terrain generation to be perfectly consistent
+    const hexRadius = 0.866;
+    const segments = Math.ceil(radius / (hexRadius * 2));
+    
+    // Check if this position would be within the generated terrain
+    for (let q = -segments; q <= segments; q++) {
+        for (let r = Math.max(-segments, -q-segments); r <= Math.min(segments, -q+segments); r++) {
+            const s = -q - r;
+            
+            if (Math.abs(s) <= segments) {
+                const hexX = hexRadius * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r);
+                const hexZ = hexRadius * (3/2 * r);
+                
+                const distanceFromCenter = Math.sqrt(hexX*hexX + hexZ*hexZ);
+                
+                if (distanceFromCenter <= radius) {
+                    // Check if player position is close to this hex position
+                    const distanceToHex = Math.sqrt((x - hexX) * (x - hexX) + (z - hexZ) * (z - hexZ));
+                    if (distanceToHex < hexRadius * 1.5) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    
+    return false;
 }
 
 function updatePlayer(delta) {
