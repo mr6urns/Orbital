@@ -853,20 +853,22 @@ function updatePlayer(delta) {
     playerVelocity.multiplyScalar(friction);
 
     // BARRIER COLLISION - Check each axis separately
-    const barrierRadius = hexMapRadius - 5;
+    const barrierRadius = hexMapRadius - 5; // This should be 45, same as the wall
     
     // Test X movement
     const testX = player.position.x + playerVelocity.x * delta;
     const testDistanceX = Math.sqrt(testX * testX + player.position.z * player.position.z);
-    if (testDistanceX > barrierRadius) {
+    if (testDistanceX >= barrierRadius) {
         playerVelocity.x = 0; // Block X movement
+        console.log('Blocked X movement at distance:', testDistanceX, 'barrier at:', barrierRadius);
     }
     
     // Test Z movement  
     const testZ = player.position.z + playerVelocity.z * delta;
     const testDistanceZ = Math.sqrt(player.position.x * player.position.x + testZ * testZ);
-    if (testDistanceZ > barrierRadius) {
+    if (testDistanceZ >= barrierRadius) {
         playerVelocity.z = 0; // Block Z movement
+        console.log('Blocked Z movement at distance:', testDistanceZ, 'barrier at:', barrierRadius);
     }
     
     // Now apply the (possibly modified) velocity
