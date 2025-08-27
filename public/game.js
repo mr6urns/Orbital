@@ -859,16 +859,14 @@ function updatePlayer(delta) {
     const testX = player.position.x + playerVelocity.x * delta;
     const testDistanceX = Math.sqrt(testX * testX + player.position.z * player.position.z);
     if (testDistanceX >= barrierRadius) {
-        playerVelocity.x = 0; // Block X movement
-        console.log('Blocked X movement at distance:', testDistanceX, 'barrier at:', barrierRadius);
+        playerVelocity.x = 0;
     }
     
     // Test Z movement  
     const testZ = player.position.z + playerVelocity.z * delta;
     const testDistanceZ = Math.sqrt(player.position.x * player.position.x + testZ * testZ);
     if (testDistanceZ >= barrierRadius) {
-        playerVelocity.z = 0; // Block Z movement
-        console.log('Blocked Z movement at distance:', testDistanceZ, 'barrier at:', barrierRadius);
+        playerVelocity.z = 0;
     }
     
     // Now apply the (possibly modified) velocity
