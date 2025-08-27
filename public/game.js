@@ -904,6 +904,9 @@ function updatePlayer(delta) {
     let allowHorizontalMovement = true;
     if (distanceFromCenter > hexMapRadius - 5) {
         allowHorizontalMovement = false;
+        // Stop horizontal velocity when hitting barrier
+        playerVelocity.x = 0;
+        playerVelocity.z = 0;
     }
     
     // Check if horizontal movement would collide with terrain
