@@ -1,17 +1,17 @@
-# EXPLORE Character Creation System
+# EXPLORE Space Game
 
-A React-based 3D character creation system for space exploration games.
+A complete 3D space exploration game with character creation system built with React and Three.js.
 
 ## Features
 
+- **Complete 3D Space Game** - Hexagonal terrain exploration with physics
 - **3D Character Preview** - Real-time rotating character model using Three.js
+- **Mobile Support** - Touch controls and responsive design
 - **4 Customization Categories**:
   - Helmets (5 different styles with unique colors)
   - Suits (5 different types and colors)
   - Blasters (4 weapon types)
   - Body Colors (6 color options for limbs and accessories)
-- **Responsive Design** - Works on desktop and mobile
-- **Export Ready** - Designed for easy integration into other projects
 
 ## Installation
 
