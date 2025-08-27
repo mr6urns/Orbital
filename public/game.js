@@ -888,44 +888,38 @@ function updatePlayer(delta) {
     const nextPosition = player.position.clone();
     const velocityDelta = playerVelocity.clone().multiplyScalar(delta);
     
-    // BARRIER COLLISION - Check before applying movement
+    // BARRIER COLLISION - Simple and consistent
     const barrierRadius = 38;
-    const nextHorizontalDistance = Math.sqrt(
+    const currentDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+    const nextDistance = Math.sqrt(
         (nextPosition.x + velocityDelta.x) * (nextPosition.x + velocityDelta.x) + 
         (nextPosition.z + velocityDelta.z) * (nextPosition.z + velocityDelta.z)
     );
     
-    // If next position would be outside barrier, clamp movement
-    if (nextHorizontalDistance > barrierRadius) {
-        const currentDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+    // If movement would take us outside the barrier, stop that movement
+    if (nextDistance > barrierRadius) {
+        // Calculate the maximum allowed movement toward the barrier
+        const currentPos2D = new THREE.Vector2(nextPosition.x, nextPosition.z);
+        const velocity2D = new THREE.Vector2(velocityDelta.x, velocityDelta.z);
         
         if (currentDistance < barrierRadius) {
-            // Player is inside, prevent movement outside
-            const directionToCenter = new THREE.Vector3(-nextPosition.x, 0, -nextPosition.z).normalize();
-            const allowedDistance = barrierRadius - 0.5; // Small buffer
+            // We're inside, find intersection point with barrier circle
+            const direction = velocity2D.clone().normalize();
+            const maxDistance = barrierRadius - currentDistance - 0.1; // Small buffer
             
-            // Project movement onto allowed direction
-            const horizontalVelocity = new THREE.Vector3(velocityDelta.x, 0, velocityDelta.z);
-            const radialDirection = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
-            const radialComponent = horizontalVelocity.dot(radialDirection);
-            
-            // Only allow inward movement
-            if (radialComponent > 0) {
-                horizontalVelocity.sub(radialDirection.multiplyScalar(radialComponent));
-                velocityDelta.x = horizontalVelocity.x;
-                velocityDelta.z = horizontalVelocity.z;
-                
-                // Dampen velocity when hitting barrier
-                playerVelocity.x *= 0.1;
-                playerVelocity.z *= 0.1;
+            if (velocity2D.length() > maxDistance) {
+                velocity2D.setLength(Math.max(0, maxDistance));
+                velocityDelta.x = velocity2D.x;
+                velocityDelta.z = velocity2D.y;
             }
         } else {
-            // Player is outside, push back in
-            const directionToCenter = new THREE.Vector3(-nextPosition.x, 0, -nextPosition.z).normalize();
-            nextPosition.x = directionToCenter.x * (barrierRadius - 0.5) * -1;
-            nextPosition.z = directionToCenter.z * (barrierRadius - 0.5) * -1;
-            
-            // Stop outward velocity
+            // We're outside, push back to barrier
+            const directionToCenter = currentPos2D.clone().normalize().multiplyScalar(-1);
+            const correctedPos = directionToCenter.multiplyScalar(barrierRadius - 0.1);
+            nextPosition.x = correctedPos.x;
+            nextPosition.z = correctedPos.y;
+            velocityDelta.x = 0;
+            velocityDelta.z = 0;
             playerVelocity.x = 0;
             playerVelocity.z = 0;
         }
