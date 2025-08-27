@@ -522,51 +522,25 @@ let walkCycle = 0;
 let isRightArmSwinging = false;
 
 // Create astronaut character
-function createAstronaut(characterType = 'astronaut') {
+function createAstronaut(characterData = {}) {
     const group = new THREE.Group();
     const scale = 0.5;
 
-    // Define character colors
-    const characterColors = {
-        astronaut: {
-            suit: 0xffffff,
-            helmet: 0x2196f3,
-            backpack: 0xcccccc
-        },
-        scout: {
-            suit: 0x626262,
-            helmet: 0x22c55e,
-            backpack: 0xcccccc
-        },
-        heavy: {
-            suit: 0x141414,
-            helmet: 0xef4444,
-            backpack: 0x323232
-        },
-        tech: {
-            suit: 0xffffff,
-            helmet: 0xa855f7,
-            backpack: 0xcccccc
-        },
-        stealth: {
-            suit: 0xffffff,
-            helmet: 0x64748b,
-            backpack: 0xcccccc
-        }
-    };
-
-    const colors = characterColors[characterType] || characterColors.astronaut;
+    // Use character data or defaults
+    const suitColor = characterData.suit?.color || '#ffffff';
+    const helmetColor = characterData.helmet?.color || '#2196f3';
+    const bodyColor = characterData.bodyColor?.color || '#ffffff';
 
     // Body
     const bodyGeometry = new THREE.CapsuleGeometry(0.3 * scale, 0.5 * scale, 4, 8);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
+    const bodyMaterial = new THREE.MeshPhongMaterial({ color: suitColor });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     group.add(body);
 
     // Helmet
     const helmetGeometry = new THREE.SphereGeometry(0.35 * scale, 16, 16);
     const helmetMaterial = new THREE.MeshPhongMaterial({ 
-        color: colors.helmet,
+        color: helmetColor,
         transparent: true,
         opacity: 0.8
     });
@@ -576,14 +550,14 @@ function createAstronaut(characterType = 'astronaut') {
 
     // Backpack
     const backpackGeometry = new THREE.BoxGeometry(0.4 * scale, 0.6 * scale, 0.2 * scale);
-    const backpackMaterial = new THREE.MeshPhongMaterial({ color: colors.backpack });
+    const backpackMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
     const backpack = new THREE.Mesh(backpackGeometry, backpackMaterial);
     backpack.position.z = 0.3 * scale;
     group.add(backpack);
 
     // Arms
     const armGeometry = new THREE.CapsuleGeometry(0.1 * scale, 0.4 * scale, 4, 8);
-    const armMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
+    const armMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
     
     const leftArm = new THREE.Mesh(armGeometry, armMaterial);
     leftArm.position.set(-0.4 * scale, 0, 0);
@@ -595,7 +569,7 @@ function createAstronaut(characterType = 'astronaut') {
 
     // Legs
     const legGeometry = new THREE.CapsuleGeometry(0.12 * scale, 0.4 * scale, 4, 8);
-    const legMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
+    const legMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
     
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
     leftLeg.position.set(-0.2 * scale, -0.5 * scale, 0);
@@ -605,7 +579,65 @@ function createAstronaut(characterType = 'astronaut') {
     rightLeg.position.set(0.2 * scale, -0.5 * scale, 0);
     group.add(rightLeg);
 
+    // Create blaster based on character data
+    const blaster = createBlaster(characterData.blaster?.id || 'standard', scale);
+    blaster.position.set(0.4 * scale, -0.2 * scale, 0.1 * scale);
+    blaster.rotation.x = -Math.PI / 2;
+    group.add(blaster);
+
     return group;
+}
+
+function createBlaster(blasterType, scale) {
+    const blasterGroup = new THREE.Group();
+
+    switch (blasterType) {
+        case 'rapid':
+            // Smaller, sleeker design
+            const rapidBody = new THREE.BoxGeometry(0.08, 0.12, 0.3);
+            const rapidMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+            const rapidMesh = new THREE.Mesh(rapidBody, rapidMaterial);
+            blasterGroup.add(rapidMesh);
+            break;
+
+        case 'heavy':
+            // Larger, bulkier design
+            const heavyBody = new THREE.BoxGeometry(0.15, 0.2, 0.5);
+            const heavyMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const heavyMesh = new THREE.Mesh(heavyBody, heavyMaterial);
+            blasterGroup.add(heavyMesh);
+            break;
+
+        case 'plasma':
+            // Futuristic design with glowing elements
+            const plasmaBody = new THREE.BoxGeometry(0.12, 0.16, 0.4);
+            const plasmaMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x444444,
+                emissive: 0x0066ff,
+                emissiveIntensity: 0.2
+            });
+            const plasmaMesh = new THREE.Mesh(plasmaBody, plasmaMaterial);
+            blasterGroup.add(plasmaMesh);
+            break;
+
+        default: // standard
+            // Standard blaster design
+            const bodyGeometry = new THREE.BoxGeometry(0.1, 0.15, 0.4);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            blasterGroup.add(body);
+
+            const barrelGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8);
+            const barrelMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+            const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.z = 0.3;
+            blasterGroup.add(barrel);
+            break;
+    }
+
+    blasterGroup.scale.set(scale, scale, scale);
+    return blasterGroup;
 }
 
 function generateHexagonalMap(center) {
@@ -681,10 +713,10 @@ function generateHexagonalMap(center) {
 }
 
 // Get selected character from localStorage
-const selectedCharacter = localStorage.getItem('selectedCharacter') || 'astronaut';
+const characterData = JSON.parse(localStorage.getItem('characterData') || '{}');
 
 // Player
-const player = createAstronaut(selectedCharacter);
+const player = createAstronaut(characterData);
 scene.add(player);
 
 // Player physics

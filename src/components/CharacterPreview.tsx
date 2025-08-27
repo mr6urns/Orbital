@@ -1,12 +1,18 @@
 import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
-interface CharacterPreviewProps {
-  characterType: string;
-  color: string;
+interface CharacterData {
+  helmet: { id: string; name: string; color: string; unlocked: boolean };
+  suit: { id: string; name: string; color: string; unlocked: boolean };
+  blaster: { id: string; name: string; unlocked: boolean };
+  bodyColor: { id: string; name: string; color: string; unlocked: boolean };
 }
 
-export default function CharacterPreview({ characterType, color }: CharacterPreviewProps) {
+interface CharacterPreviewProps {
+  characterData: CharacterData;
+}
+
+export default function CharacterPreview({ characterData }: CharacterPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -49,7 +55,7 @@ export default function CharacterPreview({ characterType, color }: CharacterPrev
     scene.add(directionalLight);
 
     // Create character
-    const character = createCharacter(characterType, color);
+    const character = createCharacter(characterData);
     scene.add(character);
     characterRef.current = character;
 
@@ -76,48 +82,25 @@ export default function CharacterPreview({ characterType, color }: CharacterPrev
       }
       renderer.dispose();
     };
-  }, [characterType, color]);
+  }, [characterData]);
 
-  return <div ref={containerRef} className="w-full h-72" />;
+  return <div ref={containerRef} className="w-full h-full" />;
 }
 
-function createCharacter(characterType: string, color: string): THREE.Group {
+function createCharacter(characterData: CharacterData): THREE.Group {
   const group = new THREE.Group();
   const scale = 1.5;
 
-  // Define suit color based on character type
-  let suitColor = 0xffffff; // Default white
-  let backpackColor = 0xcccccc; // Default gray
-
-  switch (characterType) {
-    case 'scout':
-      suitColor = 0x626262;
-      break;
-    case 'heavy':
-      suitColor = 0x141414;
-      backpackColor = 0x323232;
-      break;
-    case 'tech':
-      suitColor = 0xffffff;
-      break;
-    case 'stealth':
-      suitColor = 0xffffff;
-      break;
-    default:
-      suitColor = 0xffffff;
-      break;
-  }
-
-  // Body
+  // Body - use suit color
   const bodyGeometry = new THREE.CapsuleGeometry(0.3 * scale, 0.5 * scale, 4, 8);
-  const bodyMaterial = new THREE.MeshPhongMaterial({ color: suitColor });
+  const bodyMaterial = new THREE.MeshPhongMaterial({ color: characterData.suit.color });
   const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
   group.add(body);
 
-  // Helmet
+  // Helmet - use helmet color
   const helmetGeometry = new THREE.SphereGeometry(0.35 * scale, 16, 16);
   const helmetMaterial = new THREE.MeshPhongMaterial({ 
-    color: color,
+    color: characterData.helmet.color,
     transparent: true,
     opacity: 0.8
   });
@@ -125,16 +108,16 @@ function createCharacter(characterType: string, color: string): THREE.Group {
   helmet.position.y = 0.5 * scale;
   group.add(helmet);
 
-  // Backpack
+  // Backpack - use body color
   const backpackGeometry = new THREE.BoxGeometry(0.4 * scale, 0.6 * scale, 0.2 * scale);
-  const backpackMaterial = new THREE.MeshPhongMaterial({ color: backpackColor });
+  const backpackMaterial = new THREE.MeshPhongMaterial({ color: characterData.bodyColor.color });
   const backpack = new THREE.Mesh(backpackGeometry, backpackMaterial);
   backpack.position.z = 0.3 * scale;
   group.add(backpack);
 
-  // Arms
+  // Arms - use body color
   const armGeometry = new THREE.CapsuleGeometry(0.1 * scale, 0.4 * scale, 4, 8);
-  const armMaterial = new THREE.MeshPhongMaterial({ color: suitColor });
+  const armMaterial = new THREE.MeshPhongMaterial({ color: characterData.bodyColor.color });
   
   const leftArm = new THREE.Mesh(armGeometry, armMaterial);
   leftArm.position.set(-0.4 * scale, 0, 0);
@@ -144,9 +127,9 @@ function createCharacter(characterType: string, color: string): THREE.Group {
   rightArm.position.set(0.4 * scale, 0, 0);
   group.add(rightArm);
 
-  // Legs
+  // Legs - use body color
   const legGeometry = new THREE.CapsuleGeometry(0.12 * scale, 0.4 * scale, 4, 8);
-  const legMaterial = new THREE.MeshPhongMaterial({ color: suitColor });
+  const legMaterial = new THREE.MeshPhongMaterial({ color: characterData.bodyColor.color });
   
   const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
   leftLeg.position.set(-0.2 * scale, -0.5 * scale, 0);
@@ -156,5 +139,63 @@ function createCharacter(characterType: string, color: string): THREE.Group {
   rightLeg.position.set(0.2 * scale, -0.5 * scale, 0);
   group.add(rightLeg);
 
+  // Blaster - create different styles based on blaster type
+  const blaster = createBlaster(characterData.blaster.id, scale);
+  blaster.position.set(0.4 * scale, -0.2 * scale, 0.1 * scale);
+  blaster.rotation.x = -Math.PI / 2;
+  group.add(blaster);
+
   return group;
+}
+
+function createBlaster(blasterType: string, scale: number): THREE.Group {
+  const blasterGroup = new THREE.Group();
+
+  switch (blasterType) {
+    case 'rapid':
+      // Smaller, sleeker design
+      const rapidBody = new THREE.BoxGeometry(0.08, 0.12, 0.3);
+      const rapidMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+      const rapidMesh = new THREE.Mesh(rapidBody, rapidMaterial);
+      blasterGroup.add(rapidMesh);
+      break;
+
+    case 'heavy':
+      // Larger, bulkier design
+      const heavyBody = new THREE.BoxGeometry(0.15, 0.2, 0.5);
+      const heavyMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+      const heavyMesh = new THREE.Mesh(heavyBody, heavyMaterial);
+      blasterGroup.add(heavyMesh);
+      break;
+
+    case 'plasma':
+      // Futuristic design with glowing elements
+      const plasmaBody = new THREE.BoxGeometry(0.12, 0.16, 0.4);
+      const plasmaMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x444444,
+        emissive: 0x0066ff,
+        emissiveIntensity: 0.2
+      });
+      const plasmaMesh = new THREE.Mesh(plasmaBody, plasmaMaterial);
+      blasterGroup.add(plasmaMesh);
+      break;
+
+    default: // standard
+      // Standard blaster design
+      const bodyGeometry = new THREE.BoxGeometry(0.1, 0.15, 0.4);
+      const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      blasterGroup.add(body);
+
+      const barrelGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8);
+      const barrelMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+      const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+      barrel.rotation.x = Math.PI / 2;
+      barrel.position.z = 0.3;
+      blasterGroup.add(barrel);
+      break;
+  }
+
+  blasterGroup.scale.set(scale, scale, scale);
+  return blasterGroup;
 }
