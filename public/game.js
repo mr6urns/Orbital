@@ -701,6 +701,9 @@ let yaw = 0;
 let pitch = 0;
 const maxPitch = Math.PI * 0.35;
 
+// Animation state
+let isRightArmSwinging = false;
+
 // Touch controls for camera on mobile
 let touchStartX = 0;
 let touchStartY = 0;
