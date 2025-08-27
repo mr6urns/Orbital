@@ -474,6 +474,12 @@ function shoot() {
     }
 }
 
+// Animation parameters
+const walkSpeed = 10;
+const legAmplitude = 0.3;
+const armSwingAmplitude = 0.2;
+let walkCycle = 0;
+
 // Create astronaut character
 function createAstronaut(characterType = 'astronaut') {
     const group = new THREE.Group();
