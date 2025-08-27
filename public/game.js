@@ -899,7 +899,7 @@ function updatePlayer(delta) {
         }
         
         // Check if we're trying to move into a hex block horizontally
-        if (distance < 0.8) { // Player radius collision
+        if (distance < 1.0) { // Player radius collision
             const hexWorldHeight = mapHeight + Math.round((noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1) + 1) * 1.5) * 0.5;
             // Only block if the hex is at or above our current height
             if (hexWorldHeight >= nextPosition.y - 0.5) {
@@ -922,8 +922,8 @@ function updatePlayer(delta) {
     nextPosition.y += velocityDelta.y;
     
     // Ground collision
-    if (nextPosition.y < nearestHexHeight + 0.8) {
-        nextPosition.y = nearestHexHeight + 0.8;
+    if (nextPosition.y < nearestHexHeight + 0.5) {
+        nextPosition.y = nearestHexHeight + 0.5;
         
         const dot = playerVelocity.y;
         if (dot < 0) {
