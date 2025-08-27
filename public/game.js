@@ -785,6 +785,16 @@ function updatePlayer(delta) {
     }
 
     player.position.copy(nextPosition);
+
+    // Make player body face the camera direction
+    const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
+    const playerBodyRotation = new THREE.Matrix4();
+    playerBodyRotation.lookAt(
+        player.position,
+        player.position.clone().add(cameraDirection),
+        playerUp
+    );
+    player.quaternion.setFromRotationMatrix(playerBodyRotation);
 }
 
 function updateCamera() {
