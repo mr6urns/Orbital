@@ -853,7 +853,7 @@ function updatePlayer(delta) {
     playerVelocity.multiplyScalar(friction);
 
     // BARRIER COLLISION - Check each axis separately
-    const barrierRadius = hexMapRadius - 8; // Move collision closer to center
+    const barrierRadius = 38; // Set collision at 38
     
     // Test X movement
     const testX = player.position.x + playerVelocity.x * delta;
