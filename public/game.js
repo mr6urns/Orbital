@@ -854,23 +854,18 @@ function updatePlayer(delta) {
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Use EXACT same collision as projectiles
-    const distanceFromMapCenter = Math.sqrt(
-        nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z
-    );
-    
-    // Blue barrier blocks player exactly like projectiles
-    if (distanceFromMapCenter > hexMapRadius - 5) {
-        // Push player back to barrier boundary
-        const angle = Math.atan2(nextPosition.z, nextPosition.x);
-        nextPosition.x = Math.cos(angle) * (hexMapRadius - 5);
-        nextPosition.z = Math.sin(angle) * (hexMapRadius - 5);
+    // Check barrier collision using EXACT same logic as projectiles
+    if (checkTerrainCollision(nextPosition, hexMap)) {
+        // If collision detected, don't move there
+        const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
+        const nextDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
         
-        // Stop velocity toward barrier
-        const normal = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
-        const velocityDotNormal = playerVelocity.dot(normal);
-        if (velocityDotNormal > 0) {
-            playerVelocity.sub(normal.multiplyScalar(velocityDotNormal * 5));
+        // If trying to move further from center, block it
+        if (nextDistance > currentDistance) {
+            // Keep current position, stop outward velocity
+            nextPosition.copy(player.position);
+            playerVelocity.x = 0;
+            playerVelocity.z = 0;
         }
     }
     
