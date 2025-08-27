@@ -5,3 +5,5 @@ import './index.css';
 function App() {
   return <CharacterCreation />;
 }
+
+export default App;
