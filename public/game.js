@@ -903,6 +903,20 @@ function updatePlayer(delta) {
 
     player.position.copy(nextPosition);
 
+    // FORCE barrier collision check every frame - push player back if they somehow got through
+    const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
+    const maxDistance = hexMapRadius - 5;
+    if (currentDistance > maxDistance) {
+        // Push player back to barrier edge
+        const angle = Math.atan2(player.position.z, player.position.x);
+        player.position.x = Math.cos(angle) * maxDistance;
+        player.position.z = Math.sin(angle) * maxDistance;
+        // Stop all horizontal movement
+        playerVelocity.x = 0;
+        playerVelocity.z = 0;
+        console.log('Player pushed back from barrier!');
+    }
+
     // Walking animation
     if (!isJumping && !jetpackInput) {
         const isMoving = isMobile ? 
