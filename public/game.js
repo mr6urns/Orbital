@@ -888,36 +888,33 @@ function updatePlayer(delta) {
     const nextPosition = player.position.clone();
     const velocityDelta = playerVelocity.clone().multiplyScalar(delta);
     
-    // Check horizontal movement against terrain
-    const nextHorizontalPos = new THREE.Vector3(
-        nextPosition.x + velocityDelta.x,
-        nextPosition.y,
-        nextPosition.z + velocityDelta.z
-    );
+    // Always apply horizontal movement
+    nextPosition.x += velocityDelta.x;
+    nextPosition.z += velocityDelta.z;
     
     // Simple barrier check - just prevent movement outside the radius
     const distanceFromCenter = Math.sqrt(
-        nextHorizontalPos.x * nextHorizontalPos.x + 
-        nextHorizontalPos.z * nextHorizontalPos.z
+        nextPosition.x * nextPosition.x + 
+        nextPosition.z * nextPosition.z
     );
     
-    let allowHorizontalMovement = true;
     if (distanceFromCenter > hexMapRadius - 5) {
-        allowHorizontalMovement = false;
-        // Stop horizontal velocity when hitting barrier
+        // Move player back to barrier edge
+        const direction = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
+        nextPosition.x = direction.x * (hexMapRadius - 5);
+        nextPosition.z = direction.z * (hexMapRadius - 5);
         playerVelocity.x = 0;
         playerVelocity.z = 0;
     }
     
-    // Check if horizontal movement would collide with terrain
-    let horizontalCollision = false;
+    // Check terrain collision
     let minDistance = Infinity;
     let nearestHexHeight = mapHeight;
     
     hexMap.hexPositions.forEach(hexPos => {
         const distance = Math.sqrt(
-            Math.pow(nextHorizontalPos.x - hexPos.x, 2) + 
-            Math.pow(nextHorizontalPos.z - hexPos.z, 2)
+            Math.pow(nextPosition.x - hexPos.x, 2) + 
+            Math.pow(nextPosition.z - hexPos.z, 2)
         );
         
         if (distance < minDistance) {
@@ -926,26 +923,7 @@ function updatePlayer(delta) {
             const heightLevels = Math.round((noiseValue + 1) * 1.5);
             nearestHexHeight = mapHeight + heightLevels * 0.5;
         }
-        
-        // Check if we're trying to move into a hex block horizontally
-        if (distance < 0.8) { // Player radius collision
-            const hexWorldHeight = mapHeight + Math.round((noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1) + 1) * 1.5) * 0.5;
-            // Only block if the hex is at or above our current height
-            if (hexWorldHeight >= nextPosition.y - 0.5) {
-                horizontalCollision = true;
-            }
-        }
     });
-    
-    // Apply horizontal movement only if no collision
-    if (!horizontalCollision && allowHorizontalMovement) {
-        nextPosition.x += velocityDelta.x;
-        nextPosition.z += velocityDelta.z;
-    } else {
-        // Stop horizontal velocity on collision
-        playerVelocity.x *= 0.1;
-        playerVelocity.z *= 0.1;
-    }
     
     // Always apply vertical movement
     nextPosition.y += velocityDelta.y;
