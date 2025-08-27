@@ -297,23 +297,6 @@ function createBarrierWall() {
 const barrierWall = createBarrierWall();
 scene.add(barrierWall);
 
-// Create invisible solid barrier 1 meter inside the visible barrier
-function createInvisibleBarrier() {
-    const invisibleBarrierRadius = hexMapRadius - 6; // 1 meter inside the moved visible barrier
-    
-    // Create invisible barrier object (no visual mesh, just collision data)
-    const invisibleBarrier = {
-        type: 'invisible_barrier',
-        solid: true,
-        radius: invisibleBarrierRadius,
-        center: new THREE.Vector3(0, 0, 0)
-    };
-    
-    return invisibleBarrier;
-}
-
-const invisibleBarrier = createInvisibleBarrier();
-
 // Health system
 const maxHealth = 100;
 let currentHealth = maxHealth;
@@ -441,19 +424,17 @@ function updateImpactEffects(delta) {
 }
 
 function checkTerrainCollision(position, hexMap) {
-    // First check barrier collision
-    const mapCenter = hexMap.center;
+    // Check blue barrier collision for projectiles
     const distanceFromCenter = Math.sqrt(
-        Math.pow(position.x - mapCenter.x, 2) + 
-        Math.pow(position.z - mapCenter.z, 2)
+        position.x * position.x + position.z * position.z
     );
     
-    // Barrier acts as solid wall for projectiles too (matches player barrier)
-    if (distanceFromCenter > hexMapRadius - 6) {
+    // Blue barrier blocks projectiles too
+    if (distanceFromCenter > hexMapRadius - 5) {
         return true;
     }
     
-    // Then check terrain collision
+    // Check terrain collision
     let terrainHeight = mapHeight;
     let minDistance = Infinity;
     
@@ -873,39 +854,26 @@ function updatePlayer(delta) {
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Invisible barrier collision - completely solid and impassable
-    // Check distance from map center (hexagonal barrier)
+    // Blue barrier collision - completely solid and impassable
     const distanceFromMapCenter = Math.sqrt(
         nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z
     );
     
-    // Hard barrier at hexMapRadius - 3 (completely impassable)
-    const barrierRadius = hexMapRadius - 3;
+    // Hard barrier at blue barrier location (completely impassable)
+    const barrierRadius = hexMapRadius - 5; // Same as blue barrier
     if (distanceFromMapCenter > barrierRadius) {
-        // Calculate direction vector from center to player
-        const directionLength = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
-        if (directionLength > 0) {
-            const normalX = nextPosition.x / directionLength;
-            const normalZ = nextPosition.z / directionLength;
-            
-            // Clamp position to barrier boundary
-            nextPosition.x = normalX * barrierRadius;
-            nextPosition.z = normalZ * barrierRadius;
-            
-            // Stop velocity in the direction of the barrier
-            const velocityDotNormal = playerVelocity.x * normalX + playerVelocity.z * normalZ;
-            if (velocityDotNormal > 0) {
-                playerVelocity.x -= normalX * velocityDotNormal;
-                playerVelocity.z -= normalZ * velocityDotNormal;
-            }
+        // Push player back to barrier boundary
+        const angle = Math.atan2(nextPosition.z, nextPosition.x);
+        nextPosition.x = Math.cos(angle) * barrierRadius;
+        nextPosition.z = Math.sin(angle) * barrierRadius;
+        
+        // Stop velocity toward barrier
+        const normal = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
+        const velocityDotNormal = playerVelocity.dot(normal);
+        if (velocityDotNormal > 0) {
+            playerVelocity.sub(normal.multiplyScalar(velocityDotNormal * 2));
         }
     }
-    
-    // Original visible barrier collision (now just for visual reference)
-    const distanceFromCenter = Math.sqrt(
-        Math.pow(nextPosition.x - hexMap.center.x, 2) + 
-        Math.pow(nextPosition.z - hexMap.center.z, 2)
-    );
     
     let terrainHeight = mapHeight;
     
