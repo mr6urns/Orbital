@@ -21,12 +21,21 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 console.log('Renderer added to DOM');
 
+// Create a simple test cube to verify rendering
+const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+const testMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const testCube = new THREE.Mesh(testGeometry, testMaterial);
+testCube.position.set(0, 5, -5);
+scene.add(testCube);
+console.log('Test cube added');
+
 // Lighting
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
 scene.add(ambientLight);
+console.log('Lighting added');
 
 // Initialize vectors
 const playerForward = new THREE.Vector3(0, 0, -1);
@@ -1030,7 +1039,11 @@ function updateCamera() {
 // Initialize game
 const hexMap = generateHexagonalMap(new THREE.Vector3(0, 0, 0));
 player.position.set(0, mapHeight + 2, 0);
+camera.position.set(0, mapHeight + 5, 5);
+camera.lookAt(0, mapHeight + 2, 0);
 console.log('Game initialized, starting animation loop...');
+console.log('Player position:', player.position);
+console.log('Camera position:', camera.position);
 
 // Initialize UI
 updateHealthUI();
