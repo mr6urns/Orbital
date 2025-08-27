@@ -260,28 +260,6 @@ function createBarrierWall() {
     
     return barrierGroup;
 }
-        
-        for (let p = 0; p < particleCount; p++) {
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-            particle.position.set(
-                centerX + (Math.random() - 0.5) * segmentLength,
-                mapHeight + Math.random() * wallHeight,
-                centerZ + (Math.random() - 0.5) * wallThickness * 2
-            );
-            
-            // Add floating animation data
-            particle.userData = {
-                originalY: particle.position.y,
-                floatSpeed: 0.5 + Math.random() * 1.5,
-                floatOffset: Math.random() * Math.PI * 2
-            };
-            
-            barrierGroup.add(particle);
-        }
-    }
-    
-    return barrierGroup;
-}
 
 const barrierWall = createBarrierWall();
 scene.add(barrierWall);
