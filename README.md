@@ -1,287 +1,133 @@
-# EXPLORE Game - Complete Integration Guide
+# EXPLORE Character Creation System
 
-A complete 3D space exploration game with character creation system, ready for integration into existing React projects.
+A React-based 3D character creation system for space exploration games.
 
-## 🎮 Complete Game Features
+## Features
 
-- **3D Character Creation System** - Real-time rotating character model using Three.js
-- **Full 3D Game Engine** - Hexagonal terrain, physics, shooting mechanics
-- **Mobile & Desktop Support** - Touch controls for mobile, mouse/keyboard for desktop
-- **Character Customization**:
+- **3D Character Preview** - Real-time rotating character model using Three.js
+- **4 Customization Categories**:
   - Helmets (5 different styles with unique colors)
   - Suits (5 different types and colors)
   - Blasters (4 weapon types)
-  - Body Colors (6 color options)
-- **Game Mechanics**:
-  - Jetpack flight system
-  - Health and energy management
-  - Projectile shooting with impact effects
-  - Hexagonal terrain with invisible barriers
-  - Starfield dome environment
+  - Body Colors (6 color options for limbs and accessories)
+- **Responsive Design** - Works on desktop and mobile
+- **Export Ready** - Designed for easy integration into other projects
 
-## 🚀 Complete Integration Guide
-
-### Step 1: Copy Game Files
-
-Copy these **3 essential files** to your existing project's `public/` folder:
-
-```
-public/
-├── explore-game.html     # Complete game HTML with embedded UI
-├── explore-game.js       # Complete game engine
-└── (your existing files)
-```
-
-### Step 2: Copy React Components
-
-Copy these components to your existing project's `src/components/` folder:
-
-```
-src/components/
-├── GameLauncher.tsx      # Simple button to launch game
-├── CharacterCreation.tsx # Character creation system
-└── CharacterPreview.tsx  # 3D character preview
-```
-
-### Step 3: Install Dependencies
-
-Add these dependencies to your existing project:
+## Installation
 
 ```bash
-npm install three @types/three simplex-noise lucide-react
+npm install
+npm run dev
 ```
 
-Or add to your `package.json`:
+## Dependencies
 
 ```json
 {
-  "dependencies": {
-    "three": "^0.165.0",
-    "@types/three": "^0.165.0",
-    "simplex-noise": "^4.0.1",
-    "lucide-react": "^0.363.0"
-  }
+  "@react-three/fiber": "^8.18.0",
+  "@types/three": "^0.165.0",
+  "lucide-react": "^0.363.0",
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "simplex-noise": "^4.0.1",
+  "three": "^0.165.0"
 }
 ```
 
-### Step 4: Integration Options
+## Integration
 
-#### Option A: Direct Game Launch (Simplest)
-Replace your explore button with the GameLauncher component:
-
-```tsx
-import GameLauncher from './components/GameLauncher';
-
-function YourComponent() {
-  return (
-    <div>
-      {/* Your existing content */}
-      <GameLauncher onExplore={() => {}} />
-    </div>
-  );
-}
-```
-
-#### Option B: Character Creation First (Recommended)
-Show character creation, then launch game:
+### As a Standalone Component
 
 ```tsx
 import CharacterCreation from './components/CharacterCreation';
 
-function YourComponent() {
-  const [showCharacterCreation, setShowCharacterCreation] = useState(false);
-
-  const handleExploreClick = () => {
-    setShowCharacterCreation(true);
-  };
-
-  const handleCharacterComplete = (characterData) => {
+function MyApp() {
+  const handleExplore = (characterData) => {
     console.log('Character created:', characterData);
-    // Character data is automatically saved to localStorage
-    // Game will load it automatically
-    window.location.href = '/explore-game.html';
+    // Handle character data in your game
   };
 
-  if (showCharacterCreation) {
-    return (
-      <CharacterCreation 
-        onExplore={handleCharacterComplete}
-        showExploreButton={true}
-      />
-    );
-  }
-
   return (
-    <div>
-      {/* Your existing content */}
-      <button onClick={handleExploreClick}>
-        Explore
-      </button>
-    </div>
+    <CharacterCreation 
+      onExplore={handleExplore}
+      showExploreButton={true}
+    />
   );
 }
 ```
 
-#### Option C: Full Integration (Advanced)
-Integrate both character creation and game launcher into your existing flow:
+### Character Data Format
 
-```tsx
-import { useState } from 'react';
-import CharacterCreation from './components/CharacterCreation';
-import GameLauncher from './components/GameLauncher';
-
-function YourApp() {
-  const [gameState, setGameState] = useState('menu'); // 'menu', 'character', 'launching'
-
-  const handleExploreClick = () => {
-    setGameState('character');
-  };
-
-  const handleCharacterComplete = (characterData) => {
-    console.log('Character ready:', characterData);
-    setGameState('launching');
-    // Launch game after brief delay
-    setTimeout(() => {
-      window.location.href = '/explore-game.html';
-    }, 1000);
-  };
-
-  const handleBackToMenu = () => {
-    setGameState('menu');
-  };
-
-  switch (gameState) {
-    case 'character':
-      return (
-        <CharacterCreation 
-          onExplore={handleCharacterComplete}
-          onBack={handleBackToMenu}
-          showExploreButton={true}
-        />
-      );
-    
-    case 'launching':
-      return (
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <div className="text-cyan-400 text-2xl">Launching EXPLORE...</div>
-        </div>
-      );
-    
-    default:
-      return (
-        <div>
-          {/* Your existing menu/content */}
-          <button onClick={handleExploreClick}>
-            Start Exploring
-          </button>
-        </div>
-      );
-  }
-}
-```
-
-## 🔧 Technical Details
-
-### Character Data Flow
-1. **Character Creation** → Saves to `localStorage` as `characterData`
-2. **Game Engine** → Automatically loads from `localStorage` on startup
-3. **Data Format**:
 ```typescript
 interface CharacterData {
-  helmet: { id: string; name: string; color: string; unlocked: boolean };
-  suit: { id: string; name: string; color: string; unlocked: boolean };
-  blaster: { id: string; name: string; unlocked: boolean };
-  bodyColor: { id: string; name: string; color: string; unlocked: boolean };
+  helmet: {
+    id: string;
+    name: string;
+    color: string;
+    unlocked: boolean;
+  };
+  suit: {
+    id: string;
+    name: string;
+    color: string;
+    unlocked: boolean;
+  };
+  blaster: {
+    id: string;
+    name: string;
+    unlocked: boolean;
+  };
+  bodyColor: {
+    id: string;
+    name: string;
+    color: string;
+    unlocked: boolean;
+  };
 }
 ```
 
-### Game Engine Features
-- **Self-contained**: No dependencies on your existing code
-- **CDN imports**: Uses unpkg.com for Three.js and simplex-noise
-- **Mobile optimized**: Touch controls and responsive UI
-- **Performance optimized**: Reduced geometry for mobile devices
+## File Structure
 
-### File Structure After Integration
 ```
-your-project/
-├── public/
-│   ├── explore-game.html     # Complete game
-│   ├── explore-game.js       # Game engine
-│   └── (your existing files)
-├── src/
-│   ├── components/
-│   │   ├── GameLauncher.tsx      # Game launcher
-│   │   ├── CharacterCreation.tsx # Character creation
-│   │   ├── CharacterPreview.tsx  # 3D preview
-│   │   └── (your existing components)
-│   └── (your existing src files)
-└── package.json (updated with new dependencies)
+src/
+├── components/
+│   ├── CharacterCreation.tsx    # Main character creation component
+│   └── CharacterPreview.tsx     # 3D character preview component
+├── App.tsx                      # Main app wrapper
+└── index.css                    # Styles including starfield background
+
+public/
+├── game.js                      # Game engine with character loading
+├── game-single.html            # Game HTML file
+└── ...
 ```
 
-## 🎯 Integration Checklist
+## Key Components
 
-- [ ] Copy 3 game files to `public/`
-- [ ] Copy 3 React components to `src/components/`
-- [ ] Install required dependencies
-- [ ] Choose integration option (A, B, or C)
-- [ ] Replace your explore button with chosen implementation
-- [ ] Test character creation → game launch flow
-- [ ] Test on both desktop and mobile
+### CharacterCreation
+- Main component with tabbed interface
+- Handles all customization logic
+- Exports character data via callback or localStorage
 
-## 🚨 Important Notes
+### CharacterPreview  
+- 3D character rendering using Three.js
+- Real-time updates when customization changes
+- Optimized for performance
 
-### DO NOT MODIFY THESE FILES:
-- `explore-game.html` - Complete, self-contained game
-- `explore-game.js` - Stable game engine
-- `GameLauncher.tsx` - Simple navigation component
+## Game Integration
 
-These files are designed to be **stable and unchanging** to prevent integration issues.
+The system saves character data to `localStorage` as `characterData` and the game engine (`public/game.js`) automatically loads and applies the customization to the in-game character model.
 
-### Customization Options:
-- Modify character options in `CharacterCreation.tsx`
-- Adjust unlock states by changing `unlocked: false` for items
-- Style the character creation UI with your existing design system
-- Add your own loading screens or transitions
+## Customization
 
-## 🔄 Data Persistence
+- Add new items to the arrays in `CharacterCreation.tsx`
+- Modify colors and styles in the component
+- Extend the unlock system by changing `unlocked: false` for items
+- Add new customization categories by extending the tab system
 
-The game uses `localStorage` for character data persistence:
-- Key: `'characterData'`
-- Automatically saved when character is created
-- Automatically loaded when game starts
-- Survives browser refresh and navigation
+## Export Notes
 
-## 📱 Mobile Support
-
-The game includes full mobile support:
-- Touch joystick for movement
-- Touch buttons for jetpack and shooting
-- Responsive UI that adapts to screen size
-- Orientation warning for portrait mode
-- Optimized performance for mobile devices
-
-## 🎮 Game Controls
-
-### Desktop:
-- **WASD** - Movement
-- **Mouse** - Look around
-- **Space** - Jetpack
-- **Click** - Shoot
-- **Click to lock mouse** - First-person camera control
-
-### Mobile:
-- **Touch joystick** - Movement
-- **Touch and drag** - Look around
-- **Jetpack button** - Jetpack
-- **Shoot button** - Shoot
-
-## 🚀 Ready for Production
-
-This integration is designed to be:
-- ✅ **Stable** - Files won't change when imported
-- ✅ **Self-contained** - No conflicts with existing code
-- ✅ **Performance optimized** - Mobile and desktop ready
-- ✅ **Easy to integrate** - Simple copy and paste
-- ✅ **Customizable** - Character options easily modified
-
-**Perfect for adding a complete 3D space exploration game to any React project!**
+- All items are currently unlocked for easy testing
+- Component is fully self-contained and reusable
+- Uses standard React patterns for easy integration
+- Responsive design works across all screen sizes
