@@ -850,7 +850,7 @@ function updatePlayer(delta) {
     );
     
     // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 6; // Hard barrier collision distance (1 unit inside wall)
+    const barrierDistance = hexMapRadius - 5; // Hard barrier collision at the wall itself
     if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
@@ -862,14 +862,17 @@ function updatePlayer(delta) {
         nextPosition.x = hexMap.center.x + direction.x * barrierDistance;
         nextPosition.z = hexMap.center.z + direction.z * barrierDistance;
         
-        // Stop all movement toward the barrier and add pushback
+        // Completely stop all movement toward the barrier
         const velocityTowardBarrier = playerVelocity.dot(direction);
         if (velocityTowardBarrier > 0) {
-            playerVelocity.sub(direction.clone().multiplyScalar(velocityTowardBarrier * 2));
+            playerVelocity.sub(direction.clone().multiplyScalar(velocityTowardBarrier));
+            // Zero out velocity components toward the barrier
+            playerVelocity.x = Math.sign(playerVelocity.x) !== Math.sign(direction.x) ? playerVelocity.x : 0;
+            playerVelocity.z = Math.sign(playerVelocity.z) !== Math.sign(direction.z) ? playerVelocity.z : 0;
         }
         
-        // Add strong pushback force
-        playerVelocity.sub(direction.clone().multiplyScalar(5));
+        // Add pushback force away from barrier
+        playerVelocity.sub(direction.clone().multiplyScalar(3));
         
         // Create barrier hit effect
         if (Math.random() < 0.1) { // 10% chance per frame when touching barrier
