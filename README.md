@@ -92,13 +92,14 @@ interface CharacterData {
 src/
 ├── components/
 │   ├── CharacterCreation.tsx    # Main character creation component
-│   └── CharacterPreview.tsx     # 3D character preview component
+│   ├── CharacterPreview.tsx     # 3D character preview component
+│   └── GameLauncher.tsx         # Simple explore button component
 ├── App.tsx                      # Main app wrapper
 └── index.css                    # Styles including starfield background
 
 public/
-├── game.js                      # Game engine with character loading
-├── game-single.html            # Game HTML file
+├── explore-game.js              # Game engine with character loading
+├── explore-game.html            # Game HTML file
 └── ...
 ```
 
@@ -114,9 +115,13 @@ public/
 - Real-time updates when customization changes
 - Optimized for performance
 
+### GameLauncher
+- Simple button component for launching the game
+- Navigates to `/explore-game.html`
+
 ## Game Integration
 
-The system saves character data to `localStorage` as `characterData` and the game engine (`public/game.js`) automatically loads and applies the customization to the in-game character model.
+The system saves character data to `localStorage` as `characterData` and the game engine (`public/explore-game.js`) automatically loads and applies the customization to the in-game character model.
 
 ## Customization
 
