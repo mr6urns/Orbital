@@ -159,85 +159,72 @@ function createStarfield() {
         // Vary the radius for depth
         const radius = domeRadius + Math.random() * domeRadius * 0.5;
         
-        // Convert spherical to cartesian coordinates
-        const x = radius * Math.sin(phi) * Math.cos(theta);
-        const y = Math.max(radius * Math.cos(phi), minHeight); // Ensure stars are above map
-        const z = radius * Math.sin(phi) * Math.sin(theta);
-        
-        positions[i3] = x;
-        positions[i3 + 1] = y;
-        positions[i3 + 2] = z;
+        positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i3 + 1] = Math.max(radius * Math.cos(phi), minHeight);
+        positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
     }
-
+    
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
     const material = new THREE.PointsMaterial({
         color: 0xffffff,
-        size: isMobile ? 1.2 : 1.8,
-        sizeAttenuation: false
+        size: isMobile ? 1.5 : 2,
+        sizeAttenuation: true
     });
-
-    const stars = new THREE.Points(geometry, material);
-    stars.renderOrder = -1; // Render behind everything else
-    return stars;
+    
+    return new THREE.Points(geometry, material);
 }
 
 const starfield = createStarfield();
 scene.add(starfield);
 
-// Create perfect hexagonal fog barrier
+// Create barrier wall around the hexagonal map
 function createBarrierWall() {
     const barrierGroup = new THREE.Group();
     const wallHeight = 15;
-    const wallRadius = hexMapRadius - 0.5; // Position walls at map edge
-
-    for (let side = 0; side < 6; side++) {
-        const angle = (side * Math.PI) / 3;
-        const x1 = Math.cos(angle) * wallRadius;
-        const z1 = Math.sin(angle) * wallRadius;
-        const x2 = Math.cos(angle + Math.PI / 3) * wallRadius;
-        const z2 = Math.sin(angle + Math.PI / 3) * wallRadius;
+    const wallSegments = 6; // Hexagonal barrier
+    
+    for (let i = 0; i < wallSegments; i++) {
+        const angle = (i / wallSegments) * Math.PI * 2;
+        const nextAngle = ((i + 1) / wallSegments) * Math.PI * 2;
         
+        // Calculate wall positions
+        const x1 = Math.cos(angle) * hexMapRadius;
+        const z1 = Math.sin(angle) * hexMapRadius;
+        const x2 = Math.cos(nextAngle) * hexMapRadius;
+        const z2 = Math.sin(nextAngle) * hexMapRadius;
+        
+        // Create fog wall segment
         const wallLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
-        const centerX = (x1 + x2) / 2;
-        const centerZ = (z1 + z2) / 2;
+        const wallGeometry = new THREE.PlaneGeometry(wallLength, wallHeight);
+        const fogMaterial = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const fogWall = new THREE.Mesh(wallGeometry, fogMaterial);
+        fogWall.position.set(
+            (x1 + x2) / 2,
+            mapHeight + wallHeight / 2,
+            (z1 + z2) / 2
+        );
+        
+        // Calculate wall angle
         const wallAngle = Math.atan2(z2 - z1, x2 - x1);
         
-        // Create multiple layers for depth effect
-        for (let layer = 0; layer < 3; layer++) {
-            const fogGeometry = new THREE.PlaneGeometry(wallLength, wallHeight);
-            const fogMaterial = new THREE.MeshBasicMaterial({
-                color: 0x38bdf8,
-                transparent: true,
-                opacity: 0.05 + layer * 0.02,
-                side: THREE.DoubleSide,
-                blending: THREE.AdditiveBlending
-            });
-            
-            const fogWall = new THREE.Mesh(fogGeometry, fogMaterial);
-            
-            // Position wall exactly on hexagon edge
-            const layerOffset = layer * 0.2;
-            const offsetX = Math.cos(wallAngle + Math.PI/2) * layerOffset;
-            const offsetZ = Math.sin(wallAngle + Math.PI/2) * layerOffset;
-            
-            fogWall.position.set(
-                centerX + offsetX,
-                mapHeight + wallHeight / 2,
-                centerZ + offsetZ
-            );
-            
-            // Rotate wall to be perpendicular to hexagon edge
-            fogWall.rotation.y = wallAngle + Math.PI/2;
-            
-            fogWall.userData = {
-                originalOpacity: fogMaterial.opacity,
-                pulseSpeed: 0.3 + Math.random() * 0.2,
-                pulseOffset: Math.random() * Math.PI * 2
-            };
-            
-            barrierGroup.add(fogWall);
-        }
+        // Rotate wall to be perpendicular to hexagon edge
+        fogWall.rotation.y = wallAngle + Math.PI/2;
+        
+        fogWall.userData = {
+            originalOpacity: fogMaterial.opacity,
+            pulseSpeed: 0.3 + Math.random() * 0.2,
+            pulseOffset: Math.random() * Math.PI * 2
+        };
+        
+        barrierGroup.add(fogWall);
         
         // Add floating particles along wall
         const particleCount = 6;
