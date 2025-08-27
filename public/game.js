@@ -862,17 +862,35 @@ function updatePlayer(delta) {
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Solid barrier collision - cannot pass through at all
+    // Check collision with barrier wall - solid physical object
     const barrierDistance = hexMapRadius - 4;
-    if (distanceFromCenter > barrierDistance) {
-        // Solid wall - push player back and stop all movement toward barrier
-        const centerToPlayer = new THREE.Vector2(
-            nextPosition.x - hexMap.center.x,
-            nextPosition.z - hexMap.center.z
-        ).normalize();
+    if (distanceFromCenter >= barrierDistance) {
+        // Calculate direction from center to player
+        const directionX = nextPosition.x - hexMap.center.x;
+        const directionZ = nextPosition.z - hexMap.center.z;
+        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
         
-        // Clamp position to barrier boundary
-        nextPosition.x = hexMap.center.x + centerToPlayer.x * barrierDistance;
+        if (length > 0) {
+            // Normalize direction
+            const normalX = directionX / length;
+            const normalZ = directionZ / length;
+            
+            // Clamp position to barrier boundary
+            nextPosition.x = hexMap.center.x + normalX * (barrierDistance - 0.1);
+            nextPosition.z = hexMap.center.z + normalZ * (barrierDistance - 0.1);
+            
+            // Remove velocity components that would push through barrier
+            const velocityDotNormal = playerVelocity.x * normalX + playerVelocity.z * normalZ;
+            if (velocityDotNormal > 0) {
+                playerVelocity.x -= normalX * velocityDotNormal;
+                playerVelocity.z -= normalZ * velocityDotNormal;
+            }
+            
+            // Add slight pushback force
+            playerVelocity.x -= normalX * 2;
+            playerVelocity.z -= normalZ * 2;
+        }
+    }
         nextPosition.z = hexMap.center.z + centerToPlayer.y * barrierDistance;
         
         // Stop all velocity components that would push through the barrier
