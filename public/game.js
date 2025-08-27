@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 5; // Move wall inward by 5 units (back 3 from -8)
+    const wallRadius = hexMapRadius - 3; // Barrier at map edge
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -207,7 +207,7 @@ function createBarrierWall() {
     }
     
     // Create inner hexagon (hole) - slightly smaller
-    const innerRadius = wallRadius - 1;
+    const innerRadius = wallRadius - 2; // Thicker wall
     const holePath = new THREE.Path();
     
     for (let i = 0; i <= 6; i++) {
@@ -938,30 +938,28 @@ function updatePlayer(delta) {
         if (isMoving) {
             walkCycle += walkSpeed * delta;
             
-            const leftLeg = player.children[6];  // Left leg
-            const rightLeg = player.children[7];  // Right leg
-            const leftArm = player.children[4];   // Left arm
-            const rightArm = player.children[5];  // Right arm
+            const leftLegJoint = player.children[5];
+            const rightLegJoint = player.children[6];
+            const leftArmJoint = player.children[3];
+            const rightArmJoint = player.children[4];
             
-            if (leftLeg && rightLeg && leftArm && rightArm) {
-                leftLeg.rotation.x = Math.sin(walkCycle) * legAmplitude;
-                rightLeg.rotation.x = Math.sin(walkCycle + Math.PI) * legAmplitude;
-                leftArm.rotation.x = Math.sin(walkCycle + Math.PI) * armSwingAmplitude;
-                rightArm.rotation.x = Math.sin(walkCycle) * armSwingAmplitude;
+            if (leftLegJoint) leftLegJoint.rotation.x = Math.sin(walkCycle) * legAmplitude;
+            if (rightLegJoint) rightLegJoint.rotation.x = Math.sin(walkCycle + Math.PI) * legAmplitude;
+            if (leftArmJoint) leftArmJoint.rotation.x = Math.sin(walkCycle + Math.PI) * armSwingAmplitude;
+            if (rightArmJoint && !isRightArmSwinging) {
+                rightArmJoint.rotation.x = Math.sin(walkCycle) * armSwingAmplitude;
             }
         } else {
             // Reset limb positions when not moving
-            const leftLeg = player.children[6];
-            const rightLeg = player.children[7];
-            const leftArm = player.children[4];
-            const rightArm = player.children[5];
+            const leftLegJoint = player.children[5];
+            const rightLegJoint = player.children[6];
+            const leftArmJoint = player.children[3];
+            const rightArmJoint = player.children[4];
             
-            if (leftLeg && rightLeg && leftArm && rightArm) {
-                leftLeg.rotation.x = 0;
-                rightLeg.rotation.x = 0;
-                leftArm.rotation.x = 0;
-                rightArm.rotation.x = 0;
-            }
+            if (leftLegJoint) leftLegJoint.rotation.x = 0;
+            if (rightLegJoint) rightLegJoint.rotation.x = 0;
+            if (leftArmJoint) leftArmJoint.rotation.x = 0;
+            if (rightArmJoint) rightArmJoint.rotation.x = 0;
         }
     }
 }
