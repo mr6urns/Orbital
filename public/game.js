@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 4; // Match collision distance
+    const wallRadius = hexMapRadius - 5; // Moved in 1 unit from -4 to -5
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -299,7 +299,7 @@ scene.add(barrierWall);
 
 // Create invisible solid barrier 1 meter inside the visible barrier
 function createInvisibleBarrier() {
-    const invisibleBarrierRadius = hexMapRadius - 5; // 1 meter inside the visible barrier
+    const invisibleBarrierRadius = hexMapRadius - 6; // 1 meter inside the moved visible barrier
     
     // Create invisible barrier object (no visual mesh, just collision data)
     const invisibleBarrier = {
@@ -448,8 +448,8 @@ function checkTerrainCollision(position, hexMap) {
         Math.pow(position.z - mapCenter.z, 2)
     );
     
-    // Barrier acts as solid wall for projectiles too
-    if (distanceFromCenter > hexMapRadius - 4) {
+    // Barrier acts as solid wall for projectiles too (matches player barrier)
+    if (distanceFromCenter > hexMapRadius - 6) {
         return true;
     }
     
