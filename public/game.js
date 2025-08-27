@@ -852,19 +852,20 @@ function updatePlayer(delta) {
 
     playerVelocity.multiplyScalar(friction);
 
-    const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
+    // Calculate next position
+    const velocityThisFrame = playerVelocity.clone().multiplyScalar(delta);
+    const nextPosition = player.position.clone().add(velocityThisFrame);
     
-    // Check barrier collision BEFORE moving
-    const distanceFromCenter = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
-    if (distanceFromCenter > hexMapRadius - 5) {
-        // Don't allow movement beyond barrier - keep current position
+    // Check if next position would be past barrier
+    const nextDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+    const barrierRadius = hexMapRadius - 5;
+    
+    if (nextDistance > barrierRadius) {
+        // Block the movement entirely - don't move at all
         nextPosition.copy(player.position);
-        // Stop all horizontal velocity when hitting barrier
-        const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
-        if (currentDistance >= hexMapRadius - 5) {
-            playerVelocity.x = 0;
-            playerVelocity.z = 0;
-        }
+        // Zero out horizontal velocity to prevent sliding along barrier
+        playerVelocity.x = 0;
+        playerVelocity.z = 0;
     }
     
     let terrainHeight = mapHeight;
