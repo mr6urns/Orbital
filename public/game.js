@@ -986,7 +986,7 @@ function updateCamera() {
 
     // Rotate player to face camera direction (horizontal only)
     const playerRotation = Math.atan2(playerForward.x, playerForward.z);
-    player.rotation.y = playerRotation;
+    player.rotation.y = playerRotation + Math.PI; // Add 180 degrees to face forward
 }
 
 // Initialize game
