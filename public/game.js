@@ -239,7 +239,7 @@ function createBarrierWall() {
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         uniforms: {
-            color: { value: new THREE.Color(0x38bdf8) },
+            color: { value: new THREE.Color(0x8ec7ff) },
             opacity: { value: 0.1 },
             wallHeight: { value: wallHeight }
         },
@@ -358,8 +358,8 @@ const projectileSpeed = 50;
 const projectiles = [];
 const projectileGeometry = new THREE.SphereGeometry(0.1, 8, 8);
 const projectileMaterial = new THREE.MeshPhongMaterial({
-    color: 0x38bdf8,
-    emissive: 0x38bdf8,
+    color: 0x8ec7ff,
+    emissive: 0x8ec7ff,
     emissiveIntensity: 0.8,
     transparent: true,
     opacity: 0
@@ -380,8 +380,8 @@ function createImpactEffect(position) {
     const particleCount = isMobile ? 4 : 8;
     const particleGeometry = new THREE.SphereGeometry(0.02, 4, 4);
     const particleMaterial = new THREE.MeshPhongMaterial({
-        color: 0x38bdf8,
-        emissive: 0x38bdf8,
+        color: 0x8ec7ff,
+        emissive: 0x8ec7ff,
         emissiveIntensity: 1,
         transparent: true,
         opacity: 0.8
