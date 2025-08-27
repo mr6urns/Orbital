@@ -983,6 +983,10 @@ function updateCamera() {
     camera.position.lerp(targetPosition, cameraSmoothness);
     camera.quaternion.copy(currentCameraRotation);
     camera.up.copy(playerUp);
+
+    // Rotate player to face camera direction (horizontal only)
+    const playerRotation = Math.atan2(playerForward.x, playerForward.z);
+    player.rotation.y = playerRotation;
 }
 
 // Initialize game
