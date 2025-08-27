@@ -185,6 +185,85 @@ function createStarfield() {
 const starfield = createStarfield();
 scene.add(starfield);
 
+// Create barrier wall around hexagon perimeter
+function createBarrierWall() {
+    const barrierGroup = new THREE.Group();
+    const wallHeight = 20;
+    const wallThickness = 0.5;
+    const segments = 32; // Number of wall segments around the perimeter
+    
+    for (let i = 0; i < segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        const nextAngle = ((i + 1) / segments) * Math.PI * 2;
+        
+        // Calculate positions on the hexagon perimeter
+        const x1 = Math.cos(angle) * (hexMapRadius - 1);
+        const z1 = Math.sin(angle) * (hexMapRadius - 1);
+        const x2 = Math.cos(nextAngle) * (hexMapRadius - 1);
+        const z2 = Math.sin(nextAngle) * (hexMapRadius - 1);
+        
+        // Create wall segment geometry
+        const segmentLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+        const wallGeometry = new THREE.BoxGeometry(segmentLength, wallHeight, wallThickness);
+        
+        // Create blurry barrier material
+        const wallMaterial = new THREE.MeshPhongMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+        
+        // Position and rotate the wall segment
+        const centerX = (x1 + x2) / 2;
+        const centerZ = (z1 + z2) / 2;
+        wallMesh.position.set(centerX, mapHeight + wallHeight / 2, centerZ);
+        
+        // Rotate to face outward
+        const segmentAngle = Math.atan2(z2 - z1, x2 - x1);
+        wallMesh.rotation.y = segmentAngle;
+        
+        barrierGroup.add(wallMesh);
+        
+        // Add shimmering effect particles
+        const particleCount = 20;
+        const particleGeometry = new THREE.SphereGeometry(0.02, 4, 4);
+        const particleMaterial = new THREE.MeshPhongMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.3,
+            emissive: 0x38bdf8,
+            emissiveIntensity: 0.2
+        });
+        
+        for (let p = 0; p < particleCount; p++) {
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(
+                centerX + (Math.random() - 0.5) * segmentLength,
+                mapHeight + Math.random() * wallHeight,
+                centerZ + (Math.random() - 0.5) * wallThickness * 2
+            );
+            
+            // Add floating animation data
+            particle.userData = {
+                originalY: particle.position.y,
+                floatSpeed: 0.5 + Math.random() * 1.5,
+                floatOffset: Math.random() * Math.PI * 2
+            };
+            
+            barrierGroup.add(particle);
+        }
+    }
+    
+    return barrierGroup;
+}
+
+const barrierWall = createBarrierWall();
+scene.add(barrierWall);
+
 // Health system
 const maxHealth = 100;
 let currentHealth = maxHealth;
@@ -734,20 +813,48 @@ function updatePlayer(delta) {
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Keep player within hexagonal bounds
-    if (distanceFromCenter > hexMapRadius - 1) {
+    // Enhanced barrier collision with smooth pushback
+    const barrierDistance = hexMapRadius - 2; // Barrier is slightly inside the visual wall
+    if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
             0,
             nextPosition.z - hexMap.center.z
         ).normalize();
         
-        nextPosition.x = hexMap.center.x + direction.x * (hexMapRadius - 1);
-        nextPosition.z = hexMap.center.z + direction.z * (hexMapRadius - 1);
+        // Smooth pushback effect
+        const pushbackForce = (distanceFromCenter - barrierDistance) * 10;
+        nextPosition.x = hexMap.center.x + direction.x * barrierDistance;
+        nextPosition.z = hexMap.center.z + direction.z * barrierDistance;
         
-        // Stop horizontal movement when hitting boundary
-        playerVelocity.x = 0;
-        playerVelocity.z = 0;
+        // Apply pushback to velocity
+        playerVelocity.x -= direction.x * pushbackForce * delta;
+        playerVelocity.z -= direction.z * pushbackForce * delta;
+        
+        // Create barrier hit effect
+        if (Math.random() < 0.1) { // 10% chance per frame when touching barrier
+            const sparkGeometry = new THREE.SphereGeometry(0.05, 4, 4);
+            const sparkMaterial = new THREE.MeshPhongMaterial({
+                color: 0x38bdf8,
+                emissive: 0x38bdf8,
+                emissiveIntensity: 1,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+            spark.position.set(
+                nextPosition.x + direction.x * 0.5,
+                nextPosition.y + Math.random() * 2,
+                nextPosition.z + direction.z * 0.5
+            );
+            
+            spark.userData = { life: 0.5, fadeSpeed: 2 };
+            scene.add(spark);
+            
+            // Add to impact particles for cleanup
+            impactParticles.push(spark);
+        }
     }
     
     let terrainHeight = mapHeight;
@@ -843,6 +950,20 @@ function animate(currentTime) {
         updatePlayer(fixedTimeStep);
         updateProjectiles(fixedTimeStep);
         updateImpactEffects(fixedTimeStep);
+        
+        // Animate barrier wall particles
+        if (barrierWall) {
+            barrierWall.children.forEach(child => {
+                if (child.userData.floatSpeed) {
+                    child.userData.floatOffset += child.userData.floatSpeed * fixedTimeStep;
+                    child.position.y = child.userData.originalY + Math.sin(child.userData.floatOffset) * 0.5;
+                    
+                    // Pulse opacity
+                    const pulseIntensity = (Math.sin(child.userData.floatOffset * 2) + 1) * 0.5;
+                    child.material.opacity = 0.2 + pulseIntensity * 0.3;
+                }
+            });
+        }
         
         // Rotate starfield slowly
         starfield.rotation.y += 0.0001;
