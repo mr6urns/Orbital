@@ -940,6 +940,42 @@ function updatePlayer(delta) {
     player.rotation.x = 0; // Keep feet on ground
     player.rotation.z = 0; // No roll
 }
+    // Walking animation
+    if (!isJumping && !jetpackInput) {
+        const isMoving = isMobile ? 
+            (Math.abs(touchControls.movement.x) > 0.1 || Math.abs(touchControls.movement.y) > 0.1) :
+            (keys['w'] || keys['s'] || keys['a'] || keys['d']);
+            
+        if (isMoving) {
+            walkCycle += walkSpeed * delta;
+            
+            // Get the limb joints from the player group
+            const leftLeg = player.children[6];   // Left leg
+            const rightLeg = player.children[7];  // Right leg
+            const leftArm = player.children[4];   // Left arm
+            const rightArm = player.children[5];  // Right arm
+            
+            if (leftLeg && rightLeg && leftArm && rightArm) {
+                leftLeg.rotation.x = Math.sin(walkCycle) * legAmplitude;
+                rightLeg.rotation.x = Math.sin(walkCycle + Math.PI) * legAmplitude;
+                leftArm.rotation.x = Math.sin(walkCycle + Math.PI) * armSwingAmplitude;
+                rightArm.rotation.x = Math.sin(walkCycle) * armSwingAmplitude;
+            }
+        } else {
+            // Reset limb positions when not moving
+            const leftLeg = player.children[6];
+            const rightLeg = player.children[7];
+            const leftArm = player.children[4];
+            const rightArm = player.children[5];
+            
+            if (leftLeg && rightLeg && leftArm && rightArm) {
+                leftLeg.rotation.x = 0;
+                rightLeg.rotation.x = 0;
+                leftArm.rotation.x = 0;
+                rightArm.rotation.x = 0;
+            }
+        }
+    }
 
 function updateCamera() {
     currentCameraRotation.slerp(targetCameraRotation, cameraSmoothness);
