@@ -849,55 +849,24 @@ function updatePlayer(delta) {
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 5; // Hard barrier collision at the wall itself
+    // Absolute barrier collision - cannot pass through at all
+    const barrierDistance = hexMapRadius - 5; // Collision at the visible wall
     if (distanceFromCenter > barrierDistance) {
-        const direction = new THREE.Vector3(
-            nextPosition.x - hexMap.center.x,
-            0,
-            nextPosition.z - hexMap.center.z
-        ).normalize();
+        // Calculate direction from center to player
+        const directionX = nextPosition.x - hexMap.center.x;
+        const directionZ = nextPosition.z - hexMap.center.z;
+        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
         
-        // Absolute barrier - cannot pass through
-        nextPosition.x = hexMap.center.x + direction.x * barrierDistance;
-        nextPosition.z = hexMap.center.z + direction.z * barrierDistance;
+        // Normalize direction
+        const normalizedX = directionX / length;
+        const normalizedZ = directionZ / length;
         
-        // Completely stop all movement toward the barrier
-        const velocityTowardBarrier = playerVelocity.dot(direction);
-        if (velocityTowardBarrier > 0) {
-            playerVelocity.sub(direction.clone().multiplyScalar(velocityTowardBarrier));
-            // Zero out velocity components toward the barrier
-            playerVelocity.x = Math.sign(playerVelocity.x) !== Math.sign(direction.x) ? playerVelocity.x : 0;
-            playerVelocity.z = Math.sign(playerVelocity.z) !== Math.sign(direction.z) ? playerVelocity.z : 0;
-        }
+        // Force player back inside the barrier
+        nextPosition.x = hexMap.center.x + normalizedX * barrierDistance;
+        nextPosition.z = hexMap.center.z + normalizedZ * barrierDistance;
         
-        // Add pushback force away from barrier
-        playerVelocity.sub(direction.clone().multiplyScalar(3));
-        
-        // Create barrier hit effect
-        if (Math.random() < 0.1) { // 10% chance per frame when touching barrier
-            const sparkGeometry = new THREE.SphereGeometry(0.05, 4, 4);
-            const sparkMaterial = new THREE.MeshPhongMaterial({
-                color: 0x38bdf8,
-                emissive: 0x38bdf8,
-                emissiveIntensity: 1,
-                transparent: true,
-                opacity: 0.8
-            });
-            
-            const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
-            spark.position.set(
-                nextPosition.x + direction.x * 0.5,
-                nextPosition.y + Math.random() * 2,
-                nextPosition.z + direction.z * 0.5
-            );
-            
-            spark.userData = { life: 0.5, fadeSpeed: 2 };
-            scene.add(spark);
-            
-            // Add to impact particles for cleanup
-            impactParticles.push(spark);
-        }
+        // Stop all velocity
+        playerVelocity.set(0, playerVelocity.y, 0);
     }
     
     let terrainHeight = mapHeight;
