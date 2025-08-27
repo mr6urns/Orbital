@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 3; // Barrier at map edge
+    const wallRadius = hexMapRadius - 4; // Barrier moved in 1 unit
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -207,7 +207,7 @@ function createBarrierWall() {
     }
     
     // Create inner hexagon (hole) - slightly smaller
-    const innerRadius = wallRadius - 2; // Thicker wall
+    const innerRadius = wallRadius - 1; // Thinner wall for better visibility
     const holePath = new THREE.Path();
     
     for (let i = 0; i <= 6; i++) {
@@ -850,7 +850,7 @@ function updatePlayer(delta) {
     );
     
     // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 4; // Barrier collision distance
+    const barrierDistance = hexMapRadius - 5; // Hard barrier collision distance
     if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
@@ -862,11 +862,14 @@ function updatePlayer(delta) {
         nextPosition.x = hexMap.center.x + direction.x * barrierDistance;
         nextPosition.z = hexMap.center.z + direction.z * barrierDistance;
         
-        // Stop all movement toward the barrier
+        // Stop all movement toward the barrier and add pushback
         const velocityTowardBarrier = playerVelocity.dot(direction);
         if (velocityTowardBarrier > 0) {
-            playerVelocity.sub(direction.clone().multiplyScalar(velocityTowardBarrier));
+            playerVelocity.sub(direction.clone().multiplyScalar(velocityTowardBarrier * 2));
         }
+        
+        // Add strong pushback force
+        playerVelocity.sub(direction.clone().multiplyScalar(5));
         
         // Create barrier hit effect
         if (Math.random() < 0.1) { // 10% chance per frame when touching barrier
