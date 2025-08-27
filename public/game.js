@@ -854,19 +854,18 @@ function updatePlayer(delta) {
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Check barrier collision using EXACT same logic as projectiles
-    if (checkTerrainCollision(nextPosition, hexMap)) {
-        // If collision detected, don't move there
-        const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
-        const nextDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+    // Simple barrier collision - same as projectiles
+    const distanceFromCenter = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+    if (distanceFromCenter > hexMapRadius - 5) {
+        // Hit barrier - clamp position to barrier edge
+        const angle = Math.atan2(nextPosition.z, nextPosition.x);
+        const maxDistance = hexMapRadius - 5;
+        nextPosition.x = Math.cos(angle) * maxDistance;
+        nextPosition.z = Math.sin(angle) * maxDistance;
         
-        // If trying to move further from center, block it
-        if (nextDistance > currentDistance) {
-            // Keep current position, stop outward velocity
-            nextPosition.copy(player.position);
-            playerVelocity.x = 0;
-            playerVelocity.z = 0;
-        }
+        // Stop outward velocity
+        playerVelocity.x = 0;
+        playerVelocity.z = 0;
     }
     
     let terrainHeight = mapHeight;
