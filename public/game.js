@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius;
+    const wallRadius = hexMapRadius - 8; // Move wall inward by 8 units
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -812,7 +812,7 @@ function updatePlayer(delta) {
     );
     
     // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 2; // Barrier is slightly inside the visual wall
+    const barrierDistance = hexMapRadius - 10; // Barrier collision matches the moved wall
     if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
