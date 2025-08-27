@@ -887,6 +887,20 @@ function updatePlayer(delta) {
     // BARRIER COLLISION - Check each axis separately
     const barrierRadius = 38;
     
+    // Check if we're hitting the barrier
+    const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
+    if (currentDistance >= barrierRadius) {
+        // Push player back inside the barrier
+        const pushDirection = new THREE.Vector3(-player.position.x, 0, -player.position.z).normalize();
+        player.position.x = pushDirection.x * 38 * -1;
+        player.position.z = pushDirection.z * 38 * -1;
+        
+        // Bounce velocity
+        const bounceStrength = 0.3;
+        playerVelocity.x = pushDirection.x * bounceStrength * -1;
+        playerVelocity.z = pushDirection.z * bounceStrength * -1;
+    }
+    
     // Calculate next position for terrain collision check
     const nextPosition = player.position.clone();
     const velocityDelta = playerVelocity.clone().multiplyScalar(delta);
