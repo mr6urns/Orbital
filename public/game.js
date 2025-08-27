@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 3; // Barrier at map edge
+    const wallRadius = hexMapRadius - 5; // Move wall inward by 5 units (back 3 from -8)
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -207,7 +207,7 @@ function createBarrierWall() {
     }
     
     // Create inner hexagon (hole) - slightly smaller
-    const innerRadius = wallRadius - 2; // Thicker wall
+    const innerRadius = wallRadius - 1;
     const holePath = new THREE.Path();
     
     for (let i = 0; i <= 6; i++) {
@@ -849,7 +849,7 @@ function updatePlayer(delta) {
     );
     
     // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 4; // Barrier collision distance
+    const barrierDistance = hexMapRadius - 7; // Barrier collision matches the moved wall (back 3 units)
     if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
@@ -938,10 +938,10 @@ function updatePlayer(delta) {
         if (isMoving) {
             walkCycle += walkSpeed * delta;
             
-            const leftLeg = player.children[5];
-            const rightLeg = player.children[6];
-            const leftArm = player.children[3];
-            const rightArm = player.children[4];
+            const leftLeg = player.children[6];  // Left leg
+            const rightLeg = player.children[7];  // Right leg
+            const leftArm = player.children[4];   // Left arm
+            const rightArm = player.children[5];  // Right arm
             
             if (leftLeg && rightLeg && leftArm && rightArm) {
                 leftLeg.rotation.x = Math.sin(walkCycle) * legAmplitude;
@@ -951,10 +951,10 @@ function updatePlayer(delta) {
             }
         } else {
             // Reset limb positions when not moving
-            const leftLeg = player.children[5];
-            const rightLeg = player.children[6];
-            const leftArm = player.children[3];
-            const rightArm = player.children[4];
+            const leftLeg = player.children[6];
+            const rightLeg = player.children[7];
+            const leftArm = player.children[4];
+            const rightArm = player.children[5];
             
             if (leftLeg && rightLeg && leftArm && rightArm) {
                 leftLeg.rotation.x = 0;
