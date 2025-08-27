@@ -189,86 +189,45 @@ scene.add(starfield);
 function createBarrierWall() {
     const barrierGroup = new THREE.Group();
     const wallHeight = 15;
-    const wallRadius = hexMapRadius - 0.5; // Position walls at map edge
+    const wallRadius = hexMapRadius; // Position walls exactly at map edge
 
+    // Create exactly 6 large barriers on hexagon edges
     for (let side = 0; side < 6; side++) {
-        const angle = (side * Math.PI) / 3;
+        const angle = side * Math.PI / 3;
+        
+        // Calculate the two vertices of this hexagon side
         const x1 = Math.cos(angle) * wallRadius;
         const z1 = Math.sin(angle) * wallRadius;
         const x2 = Math.cos(angle + Math.PI / 3) * wallRadius;
         const z2 = Math.sin(angle + Math.PI / 3) * wallRadius;
         
+        // Calculate wall properties
         const wallLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
         const centerX = (x1 + x2) / 2;
         const centerZ = (z1 + z2) / 2;
         const wallAngle = Math.atan2(z2 - z1, x2 - x1);
         
-        // Create multiple layers for depth effect
-        for (let layer = 0; layer < 3; layer++) {
-            const fogGeometry = new THREE.PlaneGeometry(wallLength, wallHeight);
-            const fogMaterial = new THREE.MeshBasicMaterial({
-                color: 0x38bdf8,
-                transparent: true,
-                opacity: 0.05 + layer * 0.02,
-                side: THREE.DoubleSide,
-                blending: THREE.AdditiveBlending
-            });
-            
-            const fogWall = new THREE.Mesh(fogGeometry, fogMaterial);
-            
-            // Position wall exactly on hexagon edge
-            const layerOffset = layer * 0.2;
-            const offsetX = Math.cos(wallAngle + Math.PI/2) * layerOffset;
-            const offsetZ = Math.sin(wallAngle + Math.PI/2) * layerOffset;
-            
-            fogWall.position.set(
-                centerX + offsetX,
-                mapHeight + wallHeight / 2,
-                centerZ + offsetZ
-            );
-            
-            // Rotate wall to be perpendicular to hexagon edge
-            fogWall.rotation.y = wallAngle + Math.PI/2;
-            
-            fogWall.userData = {
-                originalOpacity: fogMaterial.opacity,
-                pulseSpeed: 0.3 + Math.random() * 0.2,
-                pulseOffset: Math.random() * Math.PI * 2
-            };
-            
-            barrierGroup.add(fogWall);
-        }
+        // Create single large barrier wall
+        const barrierGeometry = new THREE.PlaneGeometry(wallLength, wallHeight);
+        const barrierMaterial = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
         
-        // Add floating particles along wall
-        const particleCount = 6;
-        for (let p = 0; p < particleCount; p++) {
-            const t = (p + 0.5) / particleCount;
-            const particleX = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 1;
-            const particleZ = z1 + (z2 - z1) * t + (Math.random() - 0.5) * 1;
-            
-            const particleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
-            const particleMaterial = new THREE.MeshBasicMaterial({
-                color: 0x38bdf8,
-                transparent: true,
-                opacity: 0.06,
-                blending: THREE.AdditiveBlending
-            });
-            
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-            particle.position.set(
-                particleX,
-                mapHeight + 2 + Math.random() * (wallHeight - 4),
-                particleZ
-            );
-            
-            particle.userData = {
-                floatSpeed: 0.15 + Math.random() * 0.2,
-                floatOffset: Math.random() * Math.PI * 2,
-                originalY: particle.position.y
-            };
-            
-            barrierGroup.add(particle);
-        }
+        const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+        barrier.position.set(centerX, mapHeight + wallHeight / 2, centerZ);
+        barrier.rotation.y = wallAngle + Math.PI / 2;
+        
+        barrier.userData = {
+            originalOpacity: 0.15,
+            pulseSpeed: 0.5,
+            pulseOffset: side * Math.PI / 3
+        };
+        
+        barrierGroup.add(barrier);
     }
     
     return barrierGroup;
@@ -894,8 +853,8 @@ function updatePlayer(delta) {
     });
 
     // Ground collision
-    if (nextPosition.y < terrainHeight + 0.5) {
-        nextPosition.y = terrainHeight + 0.5;
+    if (nextPosition.y < terrainHeight + 0.8) {
+        nextPosition.y = terrainHeight + 0.8;
         
         const dot = playerVelocity.y;
         if (dot < 0) {
@@ -974,15 +933,11 @@ function animate(currentTime) {
         // Animate barrier wall particles
         if (barrierWall) {
             barrierWall.children.forEach(child => {
-                if (child.userData.pulseSpeed) {
+                if (child.userData.pulseSpeed !== undefined) {
                     // Animate fog walls with subtle pulsing
                     child.userData.pulseOffset += child.userData.pulseSpeed * fixedTimeStep;
                     const pulse = (Math.sin(child.userData.pulseOffset) + 1) * 0.5;
-                    child.material.opacity = child.userData.originalOpacity * (0.5 + pulse * 0.5);
-                } else if (child.userData.floatSpeed) {
-                    // Animate floating particles
-                    child.userData.floatOffset += child.userData.floatSpeed * fixedTimeStep;
-                    child.position.y = child.userData.originalY + Math.sin(child.userData.floatOffset) * 0.5;
+                    child.material.opacity = child.userData.originalOpacity * (0.7 + pulse * 0.3);
                 }
             });
         }
