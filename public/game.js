@@ -898,7 +898,23 @@ function updatePlayer(delta) {
         playerVelocity.z = 0;
     }
     
+    // Terrain collision check
+    let terrainHeight = mapHeight;
+    let minDistance = Infinity;
+    
+    hexMap.hexPositions.forEach(hexPos => {
+        const distance = Math.sqrt(
+            Math.pow(nextPosition.x - hexPos.x, 2) + 
+            Math.pow(nextPosition.z - hexPos.z, 2)
+        );
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
+            const heightLevels = Math.round((noiseValue + 1) * 1.5);
             terrainHeight = mapHeight + heightLevels * 0.5;
+        }
+    });
         }
     });
 
