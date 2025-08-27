@@ -165,18 +165,18 @@
     }
 
     #inventory {
-      top: 8px;
+      bottom: 8px;
       left: 50%;
       transform: translateX(-50%);
-      width: 400px;
+      width: min(300px, calc(100% - 16px));
     }
 
     @media (min-width: 768px) {
       #inventory {
-        top: 10px;
+        bottom: 10px;
         left: 50%;
         transform: translateX(-50%);
-        width: 400px;
+        width: min(350px, calc(100% - 20px));
       }
     }
 
