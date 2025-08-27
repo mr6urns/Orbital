@@ -26,12 +26,9 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 
 // Touch controls for mobile
 let touchControls = {
-    forward: false,
-    backward: false,
-    left: false,
-    right: false,
+    movement: { x: 0, y: 0 },
     jetpack: false,
-    jump: false
+    shoot: false
 };
 
 if (isMobile) {
@@ -40,9 +37,11 @@ if (isMobile) {
 
 function setupTouchControls() {
     const joystick = document.getElementById('movement-joystick');
-    const knob = joystick.querySelector('.joystick-knob');
+    const knob = joystick?.querySelector('.joystick-knob');
     const jetpackButton = document.getElementById('jetpack-button');
     const shootButton = document.getElementById('shoot-button');
+
+    if (!joystick || !knob) return;
 
     let joystickActive = false;
     let joystickCenter = { x: 0, y: 0 };
@@ -68,19 +67,15 @@ function setupTouchControls() {
 
         if (distance <= maxDistance) {
             knob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
-            touchControls.right = deltaX / maxDistance > 0.3;
-            touchControls.left = deltaX / maxDistance < -0.3;
-            touchControls.forward = -deltaY / maxDistance > 0.3;
-            touchControls.backward = -deltaY / maxDistance < -0.3;
+            touchControls.movement.x = deltaX / maxDistance;
+            touchControls.movement.y = -deltaY / maxDistance; // Invert Y for game coordinates
         } else {
             const angle = Math.atan2(deltaY, deltaX);
             const limitedX = Math.cos(angle) * maxDistance;
             const limitedY = Math.sin(angle) * maxDistance;
             knob.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
-            touchControls.right = limitedX / maxDistance > 0.3;
-            touchControls.left = limitedX / maxDistance < -0.3;
-            touchControls.forward = -limitedY / maxDistance > 0.3;
-            touchControls.backward = -limitedY / maxDistance < -0.3;
+            touchControls.movement.x = limitedX / maxDistance;
+            touchControls.movement.y = -limitedY / maxDistance;
         }
     }
 
@@ -88,17 +83,13 @@ function setupTouchControls() {
         e.preventDefault();
         joystickActive = false;
         knob.style.transform = 'translate(-50%, -50%)';
-        touchControls.forward = false;
-        touchControls.backward = false;
-        touchControls.left = false;
-        touchControls.right = false;
+        touchControls.movement.x = 0;
+        touchControls.movement.y = 0;
     }
 
-    if (joystick) {
-        joystick.addEventListener('touchstart', handleJoystickStart);
-        document.addEventListener('touchmove', handleJoystickMove);
-        document.addEventListener('touchend', handleJoystickEnd);
-    }
+    joystick.addEventListener('touchstart', handleJoystickStart);
+    document.addEventListener('touchmove', handleJoystickMove);
+    document.addEventListener('touchend', handleJoystickEnd);
 
     // Action buttons
     if (jetpackButton) {
@@ -117,6 +108,11 @@ function setupTouchControls() {
         shootButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             shoot();
+        });
+
+        shootButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.shoot = false;
         });
     }
 }
@@ -143,7 +139,7 @@ const mapHeight = 2; // Height of the hexagonal terrain
 const noise2D = createNoise2D();
 const noise3D = createNoise3D();
 
-// Create starfield
+// Create starfield dome
 function createStarfield() {
     const starCount = isMobile ? 800 : 1500; // Optimized for dome
     const geometry = new THREE.BufferGeometry();
@@ -256,16 +252,16 @@ function updateAmmoUI() {
     }
 }
 
-// Projectiles
+// Projectiles and impact effects
 const impactParticles = [];
 
-function createImpactEffect(position, isMoon = false) {
+function createImpactEffect(position) {
     const particles = [];
-    const particleCount = isMobile ? 4 : 8; // Reduce particles on mobile
+    const particleCount = isMobile ? 4 : 8;
     const particleGeometry = new THREE.SphereGeometry(0.02, 4, 4);
     const particleMaterial = new THREE.MeshPhongMaterial({
-        color: isMoon ? 0xcccccc : 0x38bdf8,
-        emissive: isMoon ? 0xcccccc : 0x38bdf8,
+        color: 0x38bdf8,
+        emissive: 0x38bdf8,
         emissiveIntensity: 1,
         transparent: true,
         opacity: 0.8
@@ -357,7 +353,7 @@ function updateProjectiles(delta) {
             // Check collision with hex map
             if (checkTerrainCollision(projectile.position, hexMap)) {
                 const impactPos = oldPosition.clone();
-                const newParticles = createImpactEffect(impactPos, false);
+                const newParticles = createImpactEffect(impactPos);
                 impactParticles.push(...newParticles);
                 
                 scene.remove(projectile);
@@ -397,6 +393,93 @@ function shoot() {
         currentAmmo = Math.max(0, currentAmmo - 5);
         updateAmmoUI();
     }
+}
+
+// Create astronaut character
+function createAstronaut(characterType = 'astronaut') {
+    const group = new THREE.Group();
+    const scale = 0.5;
+
+    // Define character colors
+    const characterColors = {
+        astronaut: {
+            suit: 0xffffff,
+            helmet: 0x2196f3,
+            backpack: 0xcccccc
+        },
+        scout: {
+            suit: 0x626262,
+            helmet: 0x22c55e,
+            backpack: 0xcccccc
+        },
+        heavy: {
+            suit: 0x141414,
+            helmet: 0xef4444,
+            backpack: 0x323232
+        },
+        tech: {
+            suit: 0xffffff,
+            helmet: 0xa855f7,
+            backpack: 0xcccccc
+        },
+        stealth: {
+            suit: 0xffffff,
+            helmet: 0x64748b,
+            backpack: 0xcccccc
+        }
+    };
+
+    const colors = characterColors[characterType] || characterColors.astronaut;
+
+    // Body
+    const bodyGeometry = new THREE.CapsuleGeometry(0.3 * scale, 0.5 * scale, 4, 8);
+    const bodyMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    group.add(body);
+
+    // Helmet
+    const helmetGeometry = new THREE.SphereGeometry(0.35 * scale, 16, 16);
+    const helmetMaterial = new THREE.MeshPhongMaterial({ 
+        color: colors.helmet,
+        transparent: true,
+        opacity: 0.8
+    });
+    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+    helmet.position.y = 0.5 * scale;
+    group.add(helmet);
+
+    // Backpack
+    const backpackGeometry = new THREE.BoxGeometry(0.4 * scale, 0.6 * scale, 0.2 * scale);
+    const backpackMaterial = new THREE.MeshPhongMaterial({ color: colors.backpack });
+    const backpack = new THREE.Mesh(backpackGeometry, backpackMaterial);
+    backpack.position.z = 0.3 * scale;
+    group.add(backpack);
+
+    // Arms
+    const armGeometry = new THREE.CapsuleGeometry(0.1 * scale, 0.4 * scale, 4, 8);
+    const armMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
+    
+    const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+    leftArm.position.set(-0.4 * scale, 0, 0);
+    group.add(leftArm);
+    
+    const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+    rightArm.position.set(0.4 * scale, 0, 0);
+    group.add(rightArm);
+
+    // Legs
+    const legGeometry = new THREE.CapsuleGeometry(0.12 * scale, 0.4 * scale, 4, 8);
+    const legMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
+    
+    const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+    leftLeg.position.set(-0.2 * scale, -0.5 * scale, 0);
+    group.add(leftLeg);
+    
+    const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+    rightLeg.position.set(0.2 * scale, -0.5 * scale, 0);
+    group.add(rightLeg);
+
+    return group;
 }
 
 function generateHexagonalMap(center) {
@@ -475,10 +558,7 @@ function generateHexagonalMap(center) {
 const selectedCharacter = localStorage.getItem('selectedCharacter') || 'astronaut';
 
 // Player
-const player = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.3, 1.2, 4, 8),
-    new THREE.MeshPhongMaterial({ color: 0x00ff00 })
-);
+const player = createAstronaut(selectedCharacter);
 scene.add(player);
 
 // Player physics
@@ -624,10 +704,10 @@ function updatePlayer(delta) {
     
     // Handle movement input (keyboard or touch)
     if (isMobile) {
-        if (touchControls.forward) moveDirection.add(surfaceForward);
-        if (touchControls.backward) moveDirection.sub(surfaceForward);
-        if (touchControls.left) moveDirection.sub(surfaceRight);
-        if (touchControls.right) moveDirection.add(surfaceRight);
+        if (Math.abs(touchControls.movement.x) > 0.1 || Math.abs(touchControls.movement.y) > 0.1) {
+            moveDirection.add(surfaceForward.clone().multiplyScalar(touchControls.movement.y));
+            moveDirection.add(surfaceRight.clone().multiplyScalar(touchControls.movement.x));
+        }
     } else {
         if (keys['w']) moveDirection.add(surfaceForward);
         if (keys['s']) moveDirection.sub(surfaceForward);
@@ -732,6 +812,11 @@ const hexMap = generateHexagonalMap(new THREE.Vector3(0, 0, 0));
 player.position.set(0, mapHeight + 2, 0);
 console.log('Game initialized, starting animation loop...');
 
+// Initialize UI
+updateHealthUI();
+updateJetpackUI();
+updateAmmoUI();
+
 // Animation loop
 const fixedTimeStep = 1/60;
 let lastTime = 0;
@@ -756,7 +841,10 @@ function animate(currentTime) {
     }
 
     updateCamera();
-    document.getElementById('gravity-value').textContent = `${currentGravity.toFixed(1)} m/s²`;
+    const gravityElement = document.getElementById('gravity-value');
+    if (gravityElement) {
+        gravityElement.textContent = `${currentGravity.toFixed(1)} m/s²`;
+    }
     renderer.render(scene, camera);
 }
 
