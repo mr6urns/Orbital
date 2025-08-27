@@ -857,11 +857,15 @@ function updatePlayer(delta) {
             nextPosition.z - hexMap.center.z
         ).normalize();
         
-        // Strong pushback effect to prevent walking through
-        const pushbackForce = (distanceFromCenter - barrierDistance) * 20;
+        // Absolute barrier - cannot pass through
         nextPosition.x = hexMap.center.x + direction.x * barrierDistance;
         nextPosition.z = hexMap.center.z + direction.z * barrierDistance;
         
+        // Stop all movement toward the barrier
+        const velocityTowardBarrier = playerVelocity.dot(direction);
+        if (velocityTowardBarrier > 0) {
+            playerVelocity.sub(direction.clone().multiplyScalar(velocityTowardBarrier));
+        }
         
         // Create barrier hit effect
         if (Math.random() < 0.1) { // 10% chance per frame when touching barrier
