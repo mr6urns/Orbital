@@ -168,19 +168,19 @@
       top: 8px;
       left: 50%;
       transform: translateX(-50%);
-      width: min(240px, calc(100% - 16px));
+      width: min(320px, calc(100% - 16px));
     }
 
     @media (min-width: 768px) {
       #inventory {
         top: 10px;
-        width: min(280px, calc(100% - 20px));
+        width: min(360px, calc(100% - 20px));
       }
     }
 
     .inventory-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 3px;
       margin-top: 6px;
     }
@@ -315,6 +315,49 @@
 
     #health-bar .ui-title {
       color: #22c55e;
+    }
+
+    #health-bar-red {
+      top: 70px;
+      right: 8px;
+      min-width: 120px;
+    }
+
+    @media (min-width: 768px) {
+      #health-bar-red {
+        top: 90px;
+        right: 10px;
+        min-width: 150px;
+      }
+    }
+
+    #health-value-red {
+      font-size: 14px;
+      margin: 2px 0;
+    }
+
+    @media (min-width: 768px) {
+      #health-value-red {
+        font-size: 20px;
+        margin: 4px 0;
+      }
+    }
+
+    #health-fill-red {
+      background: #ef4444;
+    }
+
+    #health-bar-red .resource-bar {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+
+    #health-bar-red .ui-title {
+      color: #ef4444;
+    }
+
+    #health-bar-red .scanner-line {
+      background: #ef4444;
     }
 
     .scanner-line {
@@ -565,6 +608,15 @@
     <div class="scanner-line"></div>
   </div>
 
+  <div id="health-bar-red" class="ui-element">
+    <div class="ui-title">Health Status</div>
+    <div id="health-value-red">100%</div>
+    <div class="resource-bar">
+      <div id="health-fill-red" class="resource-fill"></div>
+    </div>
+    <div class="scanner-line"></div>
+  </div>
+
   <div id="jetpack-energy" class="ui-element">
     <div class="ui-title">Jetpack Energy</div>
     <div id="energy-bar" class="resource-bar">
@@ -585,6 +637,7 @@
     <div class="ui-title">Inventory Matrix</div>
     <div class="inventory-grid">
       <div class="hand-item active"></div>
+      <div class="inventory-slot" data-count="0"></div>
       <div class="inventory-slot" data-count="0"></div>
       <div class="inventory-slot" data-count="0"></div>
       <div class="inventory-slot" data-count="0"></div>

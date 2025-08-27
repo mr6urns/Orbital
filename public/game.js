@@ -295,9 +295,17 @@ let lastDamageTime = 0;
 function updateHealthUI() {
     const healthFill = document.getElementById('health-fill');
     const healthValue = document.getElementById('health-value');
+    const healthFillRed = document.getElementById('health-fill-red');
+    const healthValueRed = document.getElementById('health-value-red');
+    
     if (healthFill && healthValue) {
         healthFill.style.width = `${(currentHealth / maxHealth) * 100}%`;
         healthValue.textContent = `${Math.round(currentHealth)}%`;
+    }
+    
+    if (healthFillRed && healthValueRed) {
+        healthFillRed.style.width = `${(currentHealth / maxHealth) * 100}%`;
+        healthValueRed.textContent = `${Math.round(currentHealth)}%`;
     }
 }
 
