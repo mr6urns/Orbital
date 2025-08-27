@@ -167,6 +167,49 @@ function shoot() {
     updateAmmoUI();
 }
 
+// Create starfield
+function createStarfield() {
+    const starCount = isMobile ? 800 : 1500; // Optimized for dome
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(starCount * 3);
+    
+    // Create dome parameters
+    const domeRadius = hexMapRadius * 3; // Dome extends well beyond the hex map
+    const minHeight = mapHeight + 10; // Minimum height above the map
+    
+    for (let i = 0; i < starCount; i++) {
+        const i3 = i * 3;
+        
+        // Generate stars only in the upper hemisphere (dome)
+        const theta = Math.random() * Math.PI * 2; // Full rotation around Y axis
+        const phi = Math.random() * Math.PI * 0.5; // Only upper hemisphere (0 to PI/2)
+        
+        // Vary the radius for depth
+        const radius = domeRadius + Math.random() * domeRadius * 0.5;
+        
+        // Convert spherical to cartesian coordinates
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = Math.max(radius * Math.cos(phi), minHeight); // Ensure stars are above map
+        const z = radius * Math.sin(phi) * Math.sin(theta);
+        
+        positions[i3] = x;
+        positions[i3 + 1] = y;
+        positions[i3 + 2] = z;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const material = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: isMobile ? 1.2 : 1.8,
+        sizeAttenuation: false
+    });
+
+    const stars = new THREE.Points(geometry, material);
+    stars.renderOrder = -1; // Render behind everything else
+    return stars;
+}
+
 function generateHexagonalMap(center) {
     const hexRadius = 0.866;
     const hexHeight = 0.5;
