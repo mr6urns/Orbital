@@ -7,33 +7,31 @@ Copy these 3 files to your other project:
 ```
 public/explore-game.html
 public/explore-game.js
-src/components/CharacterCreation.tsx
-src/components/CharacterPreview.tsx
+src/components/GameLauncher.tsx
 ```
 
-### **Step 2: Add Character Creation**
+### **Step 2: Add GameLauncher Component**
 Replace your explore button with:
 ```tsx
-import CharacterCreation from './components/CharacterCreation';
+import GameLauncher from './components/GameLauncher';
 
 // In your component:
-<CharacterCreation />
+<GameLauncher />
 ```
 
 ### **Step 3: Done!**
-The character creation will show, and the game will launch when "Start Exploring" is clicked.
+The game will launch when the explore button is clicked.
 
 ## ✅ **What Makes This Clean:**
 - **No dependencies** on your existing code
 - **Self-contained** game files
-- **Character data** automatically saved to localStorage
+- **Simple navigation** approach
 - **No modifications** to your existing files
 - **Stable** - won't change when imported
 
 ## 🔧 **Files Overview:**
-- `CharacterCreation.tsx` - Full character creation system
-- `CharacterPreview.tsx` - 3D character preview
+- `GameLauncher.tsx` - Simple button component
 - `explore-game.html` - Complete standalone game
-- `explore-game.js` - Complete game engine with character loading
+- `explore-game.js` - Complete game engine
 
 ## 🚀 **Ready for seamless integration!**
