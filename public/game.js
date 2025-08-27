@@ -958,9 +958,9 @@ function animate(currentTime) {
                     child.userData.floatOffset += child.userData.floatSpeed * fixedTimeStep;
                     child.position.y = child.userData.originalY + Math.sin(child.userData.floatOffset) * 0.5;
                     
-                    // Very subtle pulse opacity for fog effect
-                    const pulseIntensity = (Math.sin(child.userData.floatOffset * 1.5) + 1) * 0.5;
-                    child.material.opacity = child.userData.originalOpacity + pulseIntensity * 0.02;
+                    // Pulse opacity
+                    const pulseIntensity = (Math.sin(child.userData.floatOffset * 2) + 1) * 0.5;
+                    child.material.opacity = 0.2 + pulseIntensity * 0.3;
                 }
             });
         }
