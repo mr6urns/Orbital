@@ -888,49 +888,23 @@ function updatePlayer(delta) {
     const nextPosition = player.position.clone();
     const velocityDelta = playerVelocity.clone().multiplyScalar(delta);
     
-    // BARRIER COLLISION - Simple and consistent
-    const barrierRadius = 38;
-    const currentDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
-    const nextDistance = Math.sqrt(
-        (nextPosition.x + velocityDelta.x) * (nextPosition.x + velocityDelta.x) + 
-        (nextPosition.z + velocityDelta.z) * (nextPosition.z + velocityDelta.z)
-    );
-    
-    // If movement would take us outside the barrier, stop that movement
-    if (nextDistance > barrierRadius) {
-        // Calculate the maximum allowed movement toward the barrier
-        const currentPos2D = new THREE.Vector2(nextPosition.x, nextPosition.z);
-        const velocity2D = new THREE.Vector2(velocityDelta.x, velocityDelta.z);
-        
-        if (currentDistance < barrierRadius) {
-            // We're inside, find intersection point with barrier circle
-            const direction = velocity2D.clone().normalize();
-            const maxDistance = barrierRadius - currentDistance - 0.1; // Small buffer
-            
-            if (velocity2D.length() > maxDistance) {
-                velocity2D.setLength(Math.max(0, maxDistance));
-                velocityDelta.x = velocity2D.x;
-                velocityDelta.z = velocity2D.y;
-            }
-        } else {
-            // We're outside, push back to barrier
-            const directionToCenter = currentPos2D.clone().normalize().multiplyScalar(-1);
-            const correctedPos = directionToCenter.multiplyScalar(barrierRadius - 0.1);
-            nextPosition.x = correctedPos.x;
-            nextPosition.z = correctedPos.y;
-            velocityDelta.x = 0;
-            velocityDelta.z = 0;
-            playerVelocity.x = 0;
-            playerVelocity.z = 0;
-        }
-    }
-    
     // Check horizontal movement against terrain
     const nextHorizontalPos = new THREE.Vector3(
         nextPosition.x + velocityDelta.x,
         nextPosition.y,
         nextPosition.z + velocityDelta.z
     );
+    
+    // Simple barrier check - just prevent movement outside the radius
+    const distanceFromCenter = Math.sqrt(
+        nextHorizontalPos.x * nextHorizontalPos.x + 
+        nextHorizontalPos.z * nextHorizontalPos.z
+    );
+    
+    let allowHorizontalMovement = true;
+    if (distanceFromCenter > hexMapRadius - 5) {
+        allowHorizontalMovement = false;
+    }
     
     // Check if horizontal movement would collide with terrain
     let horizontalCollision = false;
@@ -961,7 +935,7 @@ function updatePlayer(delta) {
     });
     
     // Apply horizontal movement only if no collision
-    if (!horizontalCollision) {
+    if (!horizontalCollision && allowHorizontalMovement) {
         nextPosition.x += velocityDelta.x;
         nextPosition.z += velocityDelta.z;
     } else {
