@@ -188,42 +188,39 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const barrierGroup = new THREE.Group();
-    const wallHeight = 3;
+    const wallHeight = 1.5;
     const wallRadius = hexMapRadius; // Position walls exactly at map edge
 
     // Create exactly 6 large barriers on hexagon edges
     for (let side = 0; side < 6; side++) {
         const angle = side * Math.PI / 3;
         
-        // Calculate the two vertices of this hexagon side
-        const x1 = Math.cos(angle) * wallRadius;
-        const z1 = Math.sin(angle) * wallRadius;
-        const x2 = Math.cos(angle + Math.PI / 3) * wallRadius;
-        const z2 = Math.sin(angle + Math.PI / 3) * wallRadius;
+        // Calculate center point of this hexagon edge
+        const edgeAngle = angle + Math.PI / 6; // Angle to edge center
+        const edgeDistance = wallRadius * Math.cos(Math.PI / 6); // Distance to edge
+        const centerX = Math.cos(edgeAngle) * edgeDistance;
+        const centerZ = Math.sin(edgeAngle) * edgeDistance;
         
-        // Calculate wall properties
-        const wallLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
-        const centerX = (x1 + x2) / 2;
-        const centerZ = (z1 + z2) / 2;
-        const wallAngle = Math.atan2(z2 - z1, x2 - x1);
+        // Wall length is the side length of the hexagon
+        const wallLength = wallRadius * 2 * Math.sin(Math.PI / 6);
         
-        // Create single large barrier wall
+        // Create small straight barrier wall
         const barrierGeometry = new THREE.PlaneGeometry(wallLength, wallHeight, 1, 1);
         const barrierMaterial = new THREE.MeshBasicMaterial({
             color: 0x38bdf8,
             transparent: true,
-            opacity: 0.3,
+            opacity: 0.4,
             side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
         });
         
         const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
         barrier.position.set(centerX, mapHeight + wallHeight / 2, centerZ);
-        barrier.rotation.y = angle;
+        barrier.rotation.y = edgeAngle; // Face perpendicular to the edge
         
         barrier.userData = {
-            originalOpacity: 0.3,
+            originalOpacity: 0.4,
             pulseSpeed: 0.5,
             pulseOffset: side * Math.PI / 3
         };
