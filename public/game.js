@@ -805,14 +805,29 @@ if (isMobile) {
 
 // Helper function to check if a point is inside a hexagon
 function isInsideHexagon(x, z, radius) {
-    // Use proper hexagon distance calculation
-    // Convert to hexagon coordinate system (axial coordinates)
-    const q = (Math.sqrt(3)/3 * x - 1/3 * z) / radius;
-    const r = (2/3 * z) / radius;
-    const s = -q - r;
+    // Simple hexagon approximation using distance from center and angle constraints
+    const distance = Math.sqrt(x * x + z * z);
     
-    // Check if point is inside unit hexagon
-    return Math.abs(q) <= 1 && Math.abs(r) <= 1 && Math.abs(s) <= 1;
+    // First check if we're within the circumscribed circle
+    if (distance > radius) return false;
+    
+    // Check against each of the 6 hexagon sides
+    const angle = Math.atan2(z, x);
+    
+    for (let i = 0; i < 6; i++) {
+        const sideAngle = (i * Math.PI) / 3;
+        const normalAngle = sideAngle + Math.PI / 2;
+        
+        // Distance from point to this hexagon side
+        const sideDistance = x * Math.cos(normalAngle) + z * Math.sin(normalAngle);
+        const maxSideDistance = radius * Math.cos(Math.PI / 6); // apothem
+        
+        if (sideDistance > maxSideDistance) {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 function updatePlayer(delta) {
