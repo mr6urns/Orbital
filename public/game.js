@@ -891,22 +891,6 @@ function updatePlayer(delta) {
             playerVelocity.z -= normalZ * 2;
         }
     }
-        nextPosition.z = hexMap.center.z + centerToPlayer.y * barrierDistance;
-        
-        // Stop all velocity components that would push through the barrier
-        const velocityTowardCenter = new THREE.Vector2(playerVelocity.x, playerVelocity.z);
-        const dotProduct = velocityTowardCenter.dot(centerToPlayer);
-        
-        if (dotProduct > 0) {
-            // Remove velocity component toward the barrier
-            playerVelocity.x -= centerToPlayer.x * dotProduct;
-            playerVelocity.z -= centerToPlayer.y * dotProduct;
-        }
-        
-        // Add slight pushback force
-        playerVelocity.x -= centerToPlayer.x * 0.1;
-        playerVelocity.z -= centerToPlayer.y * 0.1;
-    }
     
     let terrainHeight = mapHeight;
     
