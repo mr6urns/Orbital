@@ -855,18 +855,18 @@ function updatePlayer(delta) {
     // BARRIER COLLISION - Check each axis separately
     const barrierRadius = 38; // Set collision at 38
     
-    // Test X movement
-    const testX = player.position.x + playerVelocity.x * delta;
-    const testDistanceX = Math.sqrt(testX * testX + player.position.z * player.position.z);
-    if (testDistanceX >= barrierRadius) {
-        playerVelocity.x = -playerVelocity.x * 0.3; // Small bounce back
-    }
-    
-    // Test Z movement  
-    const testZ = player.position.z + playerVelocity.z * delta;
-    const testDistanceZ = Math.sqrt(player.position.x * player.position.x + testZ * testZ);
-    if (testDistanceZ >= barrierRadius) {
-        playerVelocity.z = -playerVelocity.z * 0.3; // Small bounce back
+    // Check if we're hitting the barrier
+    const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
+    if (currentDistance >= barrierRadius) {
+        // Push player back inside the barrier
+        const pushDirection = new THREE.Vector3(-player.position.x, 0, -player.position.z).normalize();
+        player.position.x = pushDirection.x * (barrierRadius - 0.5) * -1;
+        player.position.z = pushDirection.z * (barrierRadius - 0.5) * -1;
+        
+        // Bounce velocity
+        const bounceStrength = 0.3;
+        playerVelocity.x = pushDirection.x * bounceStrength * -1;
+        playerVelocity.z = pushDirection.z * bounceStrength * -1;
     }
     
     // Now apply the (possibly modified) velocity
