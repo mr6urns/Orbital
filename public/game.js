@@ -874,36 +874,30 @@ function updatePlayer(delta) {
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
     // Invisible barrier collision - completely solid and impassable
-    const distanceFromCenterInvisible = Math.sqrt(
-        Math.pow(nextPosition.x - invisibleBarrier.center.x, 2) + 
-        Math.pow(nextPosition.z - invisibleBarrier.center.z, 2)
+    // Check distance from map center (hexagonal barrier)
+    const distanceFromMapCenter = Math.sqrt(
+        nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z
     );
     
-    if (distanceFromCenterInvisible >= invisibleBarrier.radius) {
-        // Calculate direction from center to player
-        const directionX = nextPosition.x - invisibleBarrier.center.x;
-        const directionZ = nextPosition.z - invisibleBarrier.center.z;
-        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
-        
-        if (length > 0) {
-            // Normalize direction
-            const normalX = directionX / length;
-            const normalZ = directionZ / length;
+    // Hard barrier at hexMapRadius - 3 (completely impassable)
+    const barrierRadius = hexMapRadius - 3;
+    if (distanceFromMapCenter > barrierRadius) {
+        // Calculate direction vector from center to player
+        const directionLength = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+        if (directionLength > 0) {
+            const normalX = nextPosition.x / directionLength;
+            const normalZ = nextPosition.z / directionLength;
             
-            // Hard clamp position to invisible barrier boundary
-            nextPosition.x = invisibleBarrier.center.x + normalX * (invisibleBarrier.radius - 0.1);
-            nextPosition.z = invisibleBarrier.center.z + normalZ * (invisibleBarrier.radius - 0.1);
+            // Clamp position to barrier boundary
+            nextPosition.x = normalX * barrierRadius;
+            nextPosition.z = normalZ * barrierRadius;
             
-            // Stop all movement through the barrier
+            // Stop velocity in the direction of the barrier
             const velocityDotNormal = playerVelocity.x * normalX + playerVelocity.z * normalZ;
             if (velocityDotNormal > 0) {
                 playerVelocity.x -= normalX * velocityDotNormal;
                 playerVelocity.z -= normalZ * velocityDotNormal;
             }
-            
-            // Strong pushback force
-            playerVelocity.x -= normalX * 10;
-            playerVelocity.z -= normalZ * 10;
         }
     }
     
