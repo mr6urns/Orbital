@@ -791,11 +791,11 @@ function updatePlayer(delta) {
     // Apply downward gravity
     playerVelocity.add(new THREE.Vector3(0, -currentGravity * delta, 0));
 
-    const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
+    const viewCameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
     const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(currentCameraRotation);
     
     // For flat terrain, just use the horizontal components
-    const surfaceForward = new THREE.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
+    const surfaceForward = new THREE.Vector3(viewCameraForward.x, 0, viewCameraForward.z).normalize();
     const surfaceRight = new THREE.Vector3(cameraRight.x, 0, cameraRight.z).normalize();
 
     const moveDirection = new THREE.Vector3();
