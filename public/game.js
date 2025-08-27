@@ -854,24 +854,23 @@ function updatePlayer(delta) {
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Blue barrier collision - completely solid and impassable
+    // Use EXACT same collision as projectiles
     const distanceFromMapCenter = Math.sqrt(
         nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z
     );
     
-    // Hard barrier at blue barrier location (completely impassable)
-    const barrierRadius = hexMapRadius - 5; // Same as blue barrier
-    if (distanceFromMapCenter > barrierRadius) {
+    // Blue barrier blocks player exactly like projectiles
+    if (distanceFromMapCenter > hexMapRadius - 5) {
         // Push player back to barrier boundary
         const angle = Math.atan2(nextPosition.z, nextPosition.x);
-        nextPosition.x = Math.cos(angle) * barrierRadius;
-        nextPosition.z = Math.sin(angle) * barrierRadius;
+        nextPosition.x = Math.cos(angle) * (hexMapRadius - 5);
+        nextPosition.z = Math.sin(angle) * (hexMapRadius - 5);
         
         // Stop velocity toward barrier
         const normal = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
         const velocityDotNormal = playerVelocity.dot(normal);
         if (velocityDotNormal > 0) {
-            playerVelocity.sub(normal.multiplyScalar(velocityDotNormal * 2));
+            playerVelocity.sub(normal.multiplyScalar(velocityDotNormal * 5));
         }
     }
     
