@@ -434,30 +434,25 @@ function checkTerrainCollision(position, hexMap) {
         return true;
     }
     
-    // Check terrain collision with better detection
+    // Check terrain collision
     let terrainHeight = mapHeight;
-    let foundCollision = false;
+    let minDistance = Infinity;
     
     hexMap.hexPositions.forEach(hexPos => {
-        // Check if position is within this hexagon's bounds
-        const dx = position.x - hexPos.x;
-        const dz = position.z - hexPos.z;
-        const distance = Math.sqrt(dx * dx + dz * dz);
+        const distance = Math.sqrt(
+            Math.pow(position.x - hexPos.x, 2) + 
+            Math.pow(position.z - hexPos.z, 2)
+        );
         
-        // Use hexagon radius (0.866) for proper collision
-        if (distance < 0.9) { // Slightly larger than hex radius for better collision
+        if (distance < minDistance) {
+            minDistance = distance;
             const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
             const heightLevels = Math.round((noiseValue + 1) * 1.5);
-            const hexHeight = mapHeight + heightLevels * 0.5;
-            
-            if (hexHeight > terrainHeight) {
-                terrainHeight = hexHeight;
-                foundCollision = true;
-            }
+            terrainHeight = mapHeight + heightLevels * 0.5;
         }
     });
 
-    return foundCollision && position.y < terrainHeight + 0.3;
+    return position.y < terrainHeight + 0.2;
 }
 
 function updateProjectiles(delta) {
@@ -895,8 +890,8 @@ function updatePlayer(delta) {
     });
 
     // Ground collision
-    if (nextPosition.y < terrainHeight + 1.0) {
-        nextPosition.y = terrainHeight + 1.0;
+    if (nextPosition.y < terrainHeight + 0.8) {
+        nextPosition.y = terrainHeight + 0.8;
         
         const dot = playerVelocity.y;
         if (dot < 0) {
