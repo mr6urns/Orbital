@@ -7,7 +7,7 @@ interface GameLauncherProps {
 export default function GameLauncher({ onExplore }: GameLauncherProps) {
   const handleExplore = () => {
     // Simple navigation to game
-    window.location.href = '/orbital-game.html';
+    window.location.href = '/explore-game.html';
   };
 
   return (
