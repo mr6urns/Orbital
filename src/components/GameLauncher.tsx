@@ -1,21 +1,21 @@
 import React from 'react';
 
 interface GameLauncherProps {
-  className?: string;
-  children?: React.ReactNode;
+  onExplore: () => void;
 }
 
-export default function GameLauncher({ className = "", children }: GameLauncherProps) {
+export default function GameLauncher({ onExplore }: GameLauncherProps) {
   const handleExplore = () => {
+    // Simple navigation to game
     window.location.href = '/explore-game.html';
   };
 
   return (
     <button
       onClick={handleExplore}
-      className={`px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] hover:scale-105 ${className}`}
+      className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] hover:scale-105"
     >
-      {children || 'Explore'}
+      Explore
     </button>
   );
 }

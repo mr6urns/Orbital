@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>EXPLORE</title>
+  <title>EXPLORE - Multiplayer</title>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     body { 
@@ -182,7 +182,7 @@
 
     .inventory-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 3px;
       margin-top: 6px;
     }
@@ -400,7 +400,7 @@
       top: 8px;
       left: 50%;
       transform: translateX(-50%);
-      display: none;
+      display: flex;
       gap: 4px;
       padding: 6px;
       border-radius: 4px;
@@ -595,6 +595,33 @@
     <p>This game is best played in landscape mode</p>
   </div>
 
+  <div id="player-indicators">
+    <div class="player-indicator active">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+    <div class="player-indicator inactive">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+    <div class="player-indicator inactive">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+    <div class="player-indicator inactive">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+  </div>
+
   <div id="gravity-indicator" class="ui-element">
     <div class="ui-title">Gravity Field</div>
     <div id="gravity-value">9.8 m/s²</div>
@@ -669,7 +696,6 @@
     }
   }
   </script>
-  <script type="module" src="explore-game.js"></script>
-  <script type="module" src="explore-game.js"></script>
+  <script type="module" src="/game.js"></script>
 </body>
 </html>
