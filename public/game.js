@@ -892,8 +892,8 @@ function updatePlayer(delta) {
     if (currentDistance >= barrierRadius) {
         // Push player back inside the barrier
         const pushDirection = new THREE.Vector3(-player.position.x, 0, -player.position.z).normalize();
-        player.position.x = pushDirection.x * 37.9 * -1;
-        player.position.z = pushDirection.z * 37.9 * -1;
+        player.position.x = pushDirection.x * 38 * -1;
+        player.position.z = pushDirection.z * 38 * -1;
         
         // Bounce velocity
         const bounceStrength = 0.3;
