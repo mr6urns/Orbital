@@ -877,7 +877,7 @@ function updatePlayer(delta) {
     const horizontalForward = new THREE.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
     
     // Calculate rotation to face camera direction
-    const targetRotation = Math.atan2(horizontalForward.x, horizontalForward.z);
+    const targetRotation = Math.atan2(horizontalForward.x, horizontalForward.z) + Math.PI;
     player.rotation.y = targetRotation;
     player.rotation.x = 0; // Keep feet on ground
     player.rotation.z = 0; // No roll
