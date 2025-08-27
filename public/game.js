@@ -852,21 +852,25 @@ function updatePlayer(delta) {
 
     playerVelocity.multiplyScalar(friction);
 
-    // Calculate next position
-    const velocityThisFrame = playerVelocity.clone().multiplyScalar(delta);
-    const nextPosition = player.position.clone().add(velocityThisFrame);
-    
-    // Check if next position would be past barrier
-    const nextDistance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
+    // BARRIER COLLISION - Check each axis separately
     const barrierRadius = hexMapRadius - 5;
     
-    if (nextDistance > barrierRadius) {
-        // Block the movement entirely - don't move at all
-        nextPosition.copy(player.position);
-        // Zero out horizontal velocity to prevent sliding along barrier
-        playerVelocity.x = 0;
-        playerVelocity.z = 0;
+    // Test X movement
+    const testX = player.position.x + playerVelocity.x * delta;
+    const testDistanceX = Math.sqrt(testX * testX + player.position.z * player.position.z);
+    if (testDistanceX > barrierRadius) {
+        playerVelocity.x = 0; // Block X movement
     }
+    
+    // Test Z movement  
+    const testZ = player.position.z + playerVelocity.z * delta;
+    const testDistanceZ = Math.sqrt(player.position.x * player.position.x + testZ * testZ);
+    if (testDistanceZ > barrierRadius) {
+        playerVelocity.z = 0; // Block Z movement
+    }
+    
+    // Now apply the (possibly modified) velocity
+    const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
     let terrainHeight = mapHeight;
     
@@ -903,20 +907,6 @@ function updatePlayer(delta) {
     }
 
     player.position.copy(nextPosition);
-
-    // FORCE barrier collision check every frame - push player back if they somehow got through
-    const currentDistance = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z);
-    const maxDistance = hexMapRadius - 5;
-    if (currentDistance > maxDistance) {
-        // Push player back to barrier edge
-        const angle = Math.atan2(player.position.z, player.position.x);
-        player.position.x = Math.cos(angle) * maxDistance;
-        player.position.z = Math.sin(angle) * maxDistance;
-        // Stop all horizontal movement
-        playerVelocity.x = 0;
-        playerVelocity.z = 0;
-        console.log('Player pushed back from barrier!');
-    }
 
     // Walking animation
     if (!isJumping && !jetpackInput) {
