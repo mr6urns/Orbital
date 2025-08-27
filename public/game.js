@@ -430,7 +430,7 @@ function checkTerrainCollision(position, hexMap) {
     );
     
     // Blue barrier blocks projectiles too
-    if (distanceFromCenter > hexMapRadius - 12) {
+    if (distanceFromCenter > hexMapRadius - 11) {
         return true;
     }
     
@@ -898,11 +898,11 @@ function updatePlayer(delta) {
         nextPosition.z * nextPosition.z
     );
     
-    if (distanceFromCenter > hexMapRadius - 12) {
+    if (distanceFromCenter > hexMapRadius - 11) {
         // Move player back to barrier edge
         const direction = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
-        nextPosition.x = direction.x * (hexMapRadius - 12);
-        nextPosition.z = direction.z * (hexMapRadius - 12);
+        nextPosition.x = direction.x * (hexMapRadius - 11);
+        nextPosition.z = direction.z * (hexMapRadius - 11);
         playerVelocity.x = 0;
         playerVelocity.z = 0;
     }
