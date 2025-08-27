@@ -985,6 +985,15 @@ function updateCamera() {
     camera.position.lerp(targetPosition, cameraSmoothness);
     camera.quaternion.copy(currentCameraRotation);
     camera.up.copy(playerUp);
+
+    // Rotate player body to face camera direction (feet always on ground)
+    const playerRotationMatrix = new THREE.Matrix4();
+    playerRotationMatrix.lookAt(
+        player.position,
+        player.position.clone().add(playerForward),
+        playerUp
+    );
+    player.quaternion.setFromRotationMatrix(playerRotationMatrix);
 }
 
 // Initialize game
