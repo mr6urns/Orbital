@@ -1,3 +1,125 @@
+import * as THREE from 'three';
+import { createNoise2D, createNoise3D } from 'simplex-noise';
+
+// Scene setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ 
+    antialias: true,
+    powerPreference: "high-performance"
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+// Mobile detection
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+// Touch controls for mobile
+let touchControls = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    jetpack: false,
+    jump: false
+};
+
+if (isMobile) {
+    setupTouchControls();
+}
+
+function setupTouchControls() {
+    const joystick = document.getElementById('movement-joystick');
+    const knob = joystick.querySelector('.joystick-knob');
+    const jetpackButton = document.getElementById('jetpack-button');
+    const shootButton = document.getElementById('shoot-button');
+
+    let joystickActive = false;
+    let joystickCenter = { x: 0, y: 0 };
+
+    // Movement joystick
+    function handleJoystickStart(e) {
+        e.preventDefault();
+        joystickActive = true;
+        const rect = joystick.getBoundingClientRect();
+        joystickCenter.x = rect.left + rect.width / 2;
+        joystickCenter.y = rect.top + rect.height / 2;
+    }
+
+    function handleJoystickMove(e) {
+        if (!joystickActive) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - joystickCenter.x;
+        const deltaY = touch.clientY - joystickCenter.y;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const maxDistance = 25;
+
+        if (distance <= maxDistance) {
+            knob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+            touchControls.right = deltaX / maxDistance > 0.3;
+            touchControls.left = deltaX / maxDistance < -0.3;
+            touchControls.forward = -deltaY / maxDistance > 0.3;
+            touchControls.backward = -deltaY / maxDistance < -0.3;
+        } else {
+            const angle = Math.atan2(deltaY, deltaX);
+            const limitedX = Math.cos(angle) * maxDistance;
+            const limitedY = Math.sin(angle) * maxDistance;
+            knob.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
+            touchControls.right = limitedX / maxDistance > 0.3;
+            touchControls.left = limitedX / maxDistance < -0.3;
+            touchControls.forward = -limitedY / maxDistance > 0.3;
+            touchControls.backward = -limitedY / maxDistance < -0.3;
+        }
+    }
+
+    function handleJoystickEnd(e) {
+        e.preventDefault();
+        joystickActive = false;
+        knob.style.transform = 'translate(-50%, -50%)';
+        touchControls.forward = false;
+        touchControls.backward = false;
+        touchControls.left = false;
+        touchControls.right = false;
+    }
+
+    if (joystick) {
+        joystick.addEventListener('touchstart', handleJoystickStart);
+        document.addEventListener('touchmove', handleJoystickMove);
+        document.addEventListener('touchend', handleJoystickEnd);
+    }
+
+    // Action buttons
+    if (jetpackButton) {
+        jetpackButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.jetpack = true;
+        });
+
+        jetpackButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.jetpack = false;
+        });
+    }
+
+    if (shootButton) {
+        shootButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            shoot();
+        });
+    }
+}
+
+// Lighting
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
+const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+scene.add(ambientLight);
+
 // Initialize vectors
 const playerForward = new THREE.Vector3(0, 0, -1);
 const playerUp = new THREE.Vector3(0, 1, 0);
@@ -12,160 +134,6 @@ const mapHeight = 2; // Height of the hexagonal terrain
 // Noise for terrain generation
 const noise2D = createNoise2D();
 const noise3D = createNoise3D();
-
-// Player physics
-const player = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.3, 1.2, 4, 8),
-    new THREE.MeshPhongMaterial({ color: 0x00ff00 })
-);
-player.position.set(0, 5, 0);
-scene.add(player);
-
-let playerVelocity = new THREE.Vector3();
-let isJumping = false;
-let jetpackFuel = 100;
-let health = 100;
-let ammo = 30;
-
-// Projectiles
-const projectiles = [];
-const impactParticles = [];
-
-function createImpactEffect(position, isMoon = false) {
-    const particles = [];
-    const particleCount = 8;
-    
-    for (let i = 0; i < particleCount; i++) {
-        const particle = new THREE.Mesh(
-            new THREE.SphereGeometry(0.05, 4, 4),
-            new THREE.MeshBasicMaterial({ 
-                color: isMoon ? 0x888888 : 0xffaa00,
-                transparent: true,
-                opacity: 0.8
-            })
-        );
-        
-        particle.position.copy(position);
-        
-        const velocity = new THREE.Vector3(
-            (Math.random() - 0.5) * 4,
-            Math.random() * 3 + 1,
-            (Math.random() - 0.5) * 4
-        );
-        
-        particle.userData = {
-            velocity: velocity,
-            life: 1.0,
-            maxLife: 1.0
-        };
-        
-        particles.push(particle);
-        scene.add(particle);
-    }
-    
-    return particles;
-}
-
-function checkTerrainCollision(position, hexMap) {
-    // Check if position is within the hexagonal map bounds
-    const mapCenter = hexMap.center;
-    const distanceFromCenter = Math.sqrt(
-        Math.pow(position.x - mapCenter.x, 2) + 
-        Math.pow(position.z - mapCenter.z, 2)
-    );
-    
-    // If outside hexagon bounds, collision with invisible walls
-    if (distanceFromCenter > hexMapRadius) {
-        return true;
-    }
-    
-    let terrainHeight = mapHeight;
-    let minDistance = Infinity;
-    
-    hexMap.hexPositions.forEach(hexPos => {
-        const distance = Math.sqrt(
-            Math.pow(position.x - hexPos.x, 2) + 
-            Math.pow(position.z - hexPos.z, 2)
-        );
-        
-        if (distance < minDistance) {
-            minDistance = distance;
-            const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
-            const heightLevels = Math.round((noiseValue + 1) * 1.5);
-            terrainHeight = mapHeight + heightLevels * 0.5;
-        }
-    });
-
-    return position.y < terrainHeight + 0.2;
-}
-
-function updateProjectiles(delta) {
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        const projectile = projectiles[i];
-        const oldPosition = projectile.position.clone();
-        
-        projectile.userData.velocity.y -= 9.8 * delta;
-        projectile.position.add(projectile.userData.velocity.clone().multiplyScalar(delta));
-        
-        projectile.age += delta;
-        
-        if (projectile.fadeIn < 1) {
-            projectile.fadeIn += delta * 4;
-            if (projectile.fadeIn > 1) projectile.fadeIn = 1;
-            if (projectile.material) {
-                projectile.material.opacity = projectile.fadeIn * 0.8;
-            }
-            
-            // Check collision with hex map
-            if (checkTerrainCollision(projectile.position, hexMap)) {
-                const impactPos = oldPosition.clone();
-                const newParticles = createImpactEffect(impactPos, false);
-                impactParticles.push(...newParticles);
-                
-                scene.remove(projectile);
-                projectiles.splice(i, 1);
-                continue;
-            }
-            
-            if (projectile.age > 2) {
-                scene.remove(projectile);
-                projectiles.splice(i, 1);
-            }
-        }
-    }
-}
-
-function shoot() {
-    if (ammo <= 0) return;
-    
-    ammo--;
-    
-    const projectile = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, 6, 6),
-        new THREE.MeshBasicMaterial({ 
-            color: 0x38bdf8,
-            emissive: 0x38bdf8,
-            transparent: true,
-            opacity: 0
-        })
-    );
-    
-    projectile.position.copy(player.position);
-    projectile.position.add(playerForward.clone().multiplyScalar(1));
-    
-    const shootDirection = playerForward.clone();
-    projectile.userData = {
-        velocity: shootDirection.multiplyScalar(15)
-    };
-    
-    projectile.age = 0;
-    projectile.fadeIn = 0;
-    
-    scene.add(projectile);
-    projectiles.push(projectile);
-    
-    updateAmmoUI();
-}
 
 // Create starfield
 function createStarfield() {
@@ -208,6 +176,219 @@ function createStarfield() {
     const stars = new THREE.Points(geometry, material);
     stars.renderOrder = -1; // Render behind everything else
     return stars;
+}
+
+const starfield = createStarfield();
+scene.add(starfield);
+
+// Health system
+const maxHealth = 100;
+let currentHealth = maxHealth;
+const healthRegenRate = 5;
+const healthRegenDelay = 5;
+let lastDamageTime = 0;
+
+function updateHealthUI() {
+    const healthFill = document.getElementById('health-fill');
+    const healthValue = document.getElementById('health-value');
+    if (healthFill && healthValue) {
+        healthFill.style.width = `${(currentHealth / maxHealth) * 100}%`;
+        healthValue.textContent = `${Math.round(currentHealth)}%`;
+    }
+}
+
+function takeDamage(amount) {
+    currentHealth = Math.max(0, currentHealth - amount);
+    lastDamageTime = Date.now() / 1000;
+    updateHealthUI();
+
+    const damageFlash = document.querySelector('.damage-flash');
+    if (damageFlash) {
+        damageFlash.classList.add('active');
+        setTimeout(() => damageFlash.classList.remove('active'), 200);
+    }
+
+    if (currentHealth <= 0) {
+        console.log('Player died!');
+    }
+}
+
+// Jetpack system
+const maxJetpackEnergy = 100;
+let jetpackEnergy = maxJetpackEnergy;
+const jetpackRechargeRate = 24;
+const jetpackDrainRate = 40;
+
+function updateJetpackUI() {
+    const energyFill = document.getElementById('energy-fill');
+    if (energyFill) {
+        energyFill.style.width = `${(jetpackEnergy / maxJetpackEnergy) * 100}%`;
+    }
+}
+
+// Blaster system
+const maxAmmo = 100;
+let currentAmmo = maxAmmo;
+const ammoRechargeRate = 2;
+const projectileSpeed = 50;
+const projectiles = [];
+const projectileGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+const projectileMaterial = new THREE.MeshPhongMaterial({
+    color: 0x38bdf8,
+    emissive: 0x38bdf8,
+    emissiveIntensity: 0.8,
+    transparent: true,
+    opacity: 0
+});
+
+function updateAmmoUI() {
+    const ammoFill = document.getElementById('ammo-fill');
+    if (ammoFill) {
+        ammoFill.style.width = `${(currentAmmo / maxAmmo) * 100}%`;
+    }
+}
+
+// Projectiles
+const impactParticles = [];
+
+function createImpactEffect(position, isMoon = false) {
+    const particles = [];
+    const particleCount = isMobile ? 4 : 8; // Reduce particles on mobile
+    const particleGeometry = new THREE.SphereGeometry(0.02, 4, 4);
+    const particleMaterial = new THREE.MeshPhongMaterial({
+        color: isMoon ? 0xcccccc : 0x38bdf8,
+        emissive: isMoon ? 0xcccccc : 0x38bdf8,
+        emissiveIntensity: 1,
+        transparent: true,
+        opacity: 0.8
+    });
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.position.copy(position);
+        
+        const velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4
+        );
+        
+        particle.velocity = velocity;
+        particle.life = 0.5;
+        particles.push(particle);
+        scene.add(particle);
+    }
+
+    return particles;
+}
+
+function updateImpactEffects(delta) {
+    for (let i = impactParticles.length - 1; i >= 0; i--) {
+        const particle = impactParticles[i];
+        particle.life -= delta;
+        
+        if (particle.life <= 0) {
+            scene.remove(particle);
+            impactParticles.splice(i, 1);
+            continue;
+        }
+
+        particle.material.opacity = particle.life * 2;
+        particle.position.add(particle.velocity.clone().multiplyScalar(delta));
+        particle.velocity.multiplyScalar(0.95);
+    }
+}
+
+function checkTerrainCollision(position, hexMap) {
+    // Check if position is within the hexagonal map bounds
+    const mapCenter = hexMap.center;
+    const distanceFromCenter = Math.sqrt(
+        Math.pow(position.x - mapCenter.x, 2) + 
+        Math.pow(position.z - mapCenter.z, 2)
+    );
+    
+    // If outside hexagon bounds, collision with invisible walls
+    if (distanceFromCenter > hexMapRadius) {
+        return true;
+    }
+    
+    let terrainHeight = mapHeight;
+    let minDistance = Infinity;
+    
+    hexMap.hexPositions.forEach(hexPos => {
+        const distance = Math.sqrt(
+            Math.pow(position.x - hexPos.x, 2) + 
+            Math.pow(position.z - hexPos.z, 2)
+        );
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
+            const heightLevels = Math.round((noiseValue + 1) * 1.5);
+            terrainHeight = mapHeight + heightLevels * 0.5;
+        }
+    });
+
+    return position.y < terrainHeight + 0.2;
+}
+
+function updateProjectiles(delta) {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const projectile = projectiles[i];
+        
+        if (projectile.alive) {
+            const oldPosition = projectile.position.clone();
+            projectile.position.add(projectile.velocity.clone().multiplyScalar(delta));
+            projectile.age += delta;
+            
+            if (projectile.fadeIn < 1) {
+                projectile.fadeIn = Math.min(1, projectile.fadeIn + delta * 5);
+                projectile.material.opacity = projectile.fadeIn * 0.8;
+            }
+            
+            // Check collision with hex map
+            if (checkTerrainCollision(projectile.position, hexMap)) {
+                const impactPos = oldPosition.clone();
+                const newParticles = createImpactEffect(impactPos, false);
+                impactParticles.push(...newParticles);
+                
+                scene.remove(projectile);
+                projectiles.splice(i, 1);
+                continue;
+            }
+
+            if (projectile.age > 2) {
+                scene.remove(projectile);
+                projectiles.splice(i, 1);
+            }
+        }
+    }
+}
+
+function shoot() {
+    if (currentAmmo >= 10) {
+        const projectile = new THREE.Mesh(
+            projectileGeometry,
+            projectileMaterial.clone()
+        );
+        
+        projectile.position.copy(camera.position);
+        
+        const direction = new THREE.Vector3(0, 0, -1)
+            .applyQuaternion(camera.quaternion)
+            .normalize();
+            
+        projectile.velocity = direction.multiplyScalar(projectileSpeed);
+        projectile.alive = true;
+        projectile.age = 0;
+        projectile.fadeIn = 0;
+        
+        scene.add(projectile);
+        projectiles.push(projectile);
+        
+        currentAmmo = Math.max(0, currentAmmo - 5);
+        updateAmmoUI();
+    }
 }
 
 function generateHexagonalMap(center) {
@@ -282,6 +463,104 @@ function generateHexagonalMap(center) {
     };
 }
 
+// Get selected character from localStorage
+const selectedCharacter = localStorage.getItem('selectedCharacter') || 'astronaut';
+
+// Player
+const player = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.3, 1.2, 4, 8),
+    new THREE.MeshPhongMaterial({ color: 0x00ff00 })
+);
+scene.add(player);
+
+// Player physics
+const playerVelocity = new THREE.Vector3();
+const playerSpeed = 8.0;
+const friction = 0.92;
+const jumpForce = 4.0;
+const maxVelocity = 10.0;
+const jetpackForce = 30.0;
+let isJumping = false;
+let jetpackActive = true;
+
+// Camera settings
+const cameraOffset = new THREE.Vector3(0, 1.5, 3);
+const cameraMinDistance = 2;
+const cameraMaxDistance = 8;
+const cameraSmoothness = 0.1;
+let currentCameraUp = new THREE.Vector3(0, 1, 0);
+let targetCameraRotation = new THREE.Quaternion();
+let currentCameraRotation = new THREE.Quaternion();
+
+// Mouse control
+let isMouseLocked = false;
+const mouseSensitivity = isMobile ? 0.003 : 0.002;
+let yaw = 0;
+let pitch = 0;
+const maxPitch = Math.PI * 0.35;
+
+// Touch controls for camera on mobile
+let touchStartX = 0;
+let touchStartY = 0;
+let isTouchingScreen = false;
+
+if (isMobile) {
+    // Touch controls for camera movement
+    renderer.domElement.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isTouchingScreen = true;
+        }
+    });
+
+    renderer.domElement.addEventListener('touchmove', (e) => {
+        if (isTouchingScreen && e.touches.length === 1) {
+            e.preventDefault();
+            const deltaX = e.touches[0].clientX - touchStartX;
+            const deltaY = e.touches[0].clientY - touchStartY;
+            
+            yaw -= deltaX * mouseSensitivity;
+            pitch -= deltaY * mouseSensitivity;
+            pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch));
+            
+            const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+            targetCameraRotation.setFromEuler(euler);
+            
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    });
+
+    renderer.domElement.addEventListener('touchend', () => {
+        isTouchingScreen = false;
+    });
+} else {
+    // Desktop mouse controls
+    document.addEventListener('click', () => {
+        if (!isMouseLocked) {
+            renderer.domElement.requestPointerLock();
+        } else {
+            shoot();
+        }
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+        isMouseLocked = document.pointerLockElement === renderer.domElement;
+    });
+
+    document.addEventListener('mousemove', (event) => {
+        if (isMouseLocked) {
+            yaw -= event.movementX * mouseSensitivity;
+            pitch -= event.movementY * mouseSensitivity;
+            pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch));
+            
+            const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+            targetCameraRotation.setFromEuler(euler);
+        }
+    });
+}
+
 function updatePlayer(delta) {
     if (!hexMap) return;
 
@@ -290,28 +569,36 @@ function updatePlayer(delta) {
     // Handle jetpack input (keyboard or touch)
     const jetpackInput = (isMobile ? touchControls.jetpack : keys[' ']);
     
-    if (jetpackInput && jetpackFuel > 0) {
-        playerVelocity.add(up.clone().multiplyScalar(15 * delta));
-        jetpackFuel -= 50 * delta;
-        if (jetpackFuel < 0) jetpackFuel = 0;
+    if (jetpackInput && jetpackEnergy > 0 && jetpackActive) {
+        jetpackEnergy = Math.max(0, jetpackEnergy - jetpackDrainRate * delta);
+        playerVelocity.add(up.clone().multiplyScalar(jetpackForce * delta));
+        
+        if (jetpackEnergy === 0) {
+            jetpackActive = false;
+        }
+        
         updateJetpackUI();
     } else {
-        jetpackFuel += 20 * delta;
-        if (jetpackFuel > 100) jetpackFuel = 100;
-        updateJetpackUI();
+        if (jetpackEnergy < maxJetpackEnergy) {
+            jetpackEnergy = Math.min(maxJetpackEnergy, jetpackEnergy + jetpackRechargeRate * delta);
+            
+            if (jetpackEnergy === maxJetpackEnergy) {
+                jetpackActive = true;
+            }
+            
+            updateJetpackUI();
+        }
     }
 
-    // Handle jump input
-    const jumpInput = (isMobile ? touchControls.jump : keys['KeyW']);
-    if (jumpInput && !isJumping) {
-        playerVelocity.add(up.clone().multiplyScalar(8));
-        isJumping = true;
+    if (currentAmmo < maxAmmo) {
+        currentAmmo = Math.min(maxAmmo, currentAmmo + ammoRechargeRate * delta);
+        updateAmmoUI();
     }
 
-    // Environmental damage
-    if (Math.random() < 0.001) {
-        health -= 1;
-        if (health < 0) health = 0;
+    // Health regeneration
+    const currentTime = Date.now() / 1000;
+    if (currentHealth < maxHealth && currentTime - lastDamageTime > healthRegenDelay) {
+        currentHealth = Math.min(maxHealth, currentHealth + healthRegenRate * delta);
         updateHealthUI();
     }
 
@@ -328,22 +615,27 @@ function updatePlayer(delta) {
     const moveDirection = new THREE.Vector3();
     
     // Handle movement input (keyboard or touch)
-    const forwardInput = (isMobile ? touchControls.forward : keys['KeyW']);
-    const backwardInput = (isMobile ? touchControls.backward : keys['KeyS']);
-    const leftInput = (isMobile ? touchControls.left : keys['KeyA']);
-    const rightInput = (isMobile ? touchControls.right : keys['KeyD']);
-    
-    if (forwardInput) moveDirection.add(surfaceForward);
-    if (backwardInput) moveDirection.sub(surfaceForward);
-    if (leftInput) moveDirection.sub(surfaceRight);
-    if (rightInput) moveDirection.add(surfaceRight);
-
-    if (moveDirection.length() > 0) {
-        moveDirection.normalize();
-        playerVelocity.add(moveDirection.multiplyScalar(10 * delta));
+    if (isMobile) {
+        if (touchControls.forward) moveDirection.add(surfaceForward);
+        if (touchControls.backward) moveDirection.sub(surfaceForward);
+        if (touchControls.left) moveDirection.sub(surfaceRight);
+        if (touchControls.right) moveDirection.add(surfaceRight);
+    } else {
+        if (keys['w']) moveDirection.add(surfaceForward);
+        if (keys['s']) moveDirection.sub(surfaceForward);
+        if (keys['a']) moveDirection.sub(surfaceRight);
+        if (keys['d']) moveDirection.add(surfaceRight);
     }
 
-    const friction = Math.pow(0.8, delta * 60);
+    if (moveDirection.length() > 0) {
+        moveDirection.normalize().multiplyScalar(playerSpeed * delta);
+        playerVelocity.add(moveDirection);
+    }
+
+    if (playerVelocity.length() > maxVelocity) {
+        playerVelocity.normalize().multiplyScalar(maxVelocity);
+    }
+
     playerVelocity.multiplyScalar(friction);
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
@@ -399,9 +691,7 @@ function updatePlayer(delta) {
             const fallSpeed = -dot;
             if (fallSpeed > 15) {
                 const damage = Math.floor((fallSpeed - 15) * 2);
-                health -= damage;
-                if (health < 0) health = 0;
-                updateHealthUI();
+                takeDamage(damage);
             }
         }
     }
@@ -420,16 +710,13 @@ function updateCamera() {
     const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
     playerForward.set(cameraForward.x, 0, cameraForward.z).normalize();
 
-    const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(currentCameraRotation);
-    const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(currentCameraRotation);
+    const targetPosition = player.position.clone()
+        .add(playerUp.clone().multiplyScalar(cameraOffset.y))
+        .add(cameraForward.clone().multiplyScalar(-cameraOffset.z));
 
-    const cameraDistance = 5;
-    const cameraPosition = player.position.clone()
-        .add(cameraForward.clone().multiplyScalar(-cameraDistance))
-        .add(cameraUp.clone().multiplyScalar(2));
-
-    camera.position.copy(cameraPosition);
-    camera.lookAt(player.position.clone().add(cameraUp.clone().multiplyScalar(1)));
+    camera.position.lerp(targetPosition, cameraSmoothness);
+    camera.quaternion.copy(currentCameraRotation);
+    camera.up.copy(playerUp);
 }
 
 // Initialize game
@@ -438,16 +725,16 @@ player.position.set(0, mapHeight + 2, 0);
 
 // Animation loop
 const fixedTimeStep = 1/60;
-let accumulator = 0;
 let lastTime = 0;
+let accumulator = 0;
 
 function animate(currentTime) {
     requestAnimationFrame(animate);
-    
+
     const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1);
     lastTime = currentTime;
     accumulator += deltaTime;
-    
+
     while (accumulator >= fixedTimeStep) {
         updatePlayer(fixedTimeStep);
         updateProjectiles(fixedTimeStep);
@@ -460,9 +747,38 @@ function animate(currentTime) {
     }
 
     updateCamera();
-    const gravityElement = document.getElementById('gravity-value');
-    if (gravityElement) {
-        gravityElement.textContent = `${currentGravity.toFixed(1)} m/s²`;
-    }
+    document.getElementById('gravity-value').textContent = `${currentGravity.toFixed(1)} m/s²`;
     renderer.render(scene, camera);
 }
+
+requestAnimationFrame(animate);
+
+// Keyboard controls (desktop only)
+const keys = {};
+if (!isMobile) {
+    window.addEventListener('keydown', (e) => {
+        keys[e.key.toLowerCase()] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        keys[e.key.toLowerCase()] = false;
+    });
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Prevent zoom on mobile
+document.addEventListener('touchmove', function (event) {
+    if (event.scale !== 1) { 
+        event.preventDefault(); 
+    }
+}, { passive: false });
+
+// Prevent context menu on long press
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+});
