@@ -1,15 +1,18 @@
 @@ .. @@
- // Planet parameters
 -const planetRadius = 20;
 -const moonRadius = 5;
 -const planetGravity = 12.0;
 -const moonGravity = 3.0;
 -let currentGravity = planetGravity;
--
 -// Orbital parameters
 -const orbitRadius = 40;
 -const orbitSpeed = 0.1;
 -let orbitAngle = 0;
+// Hexagonal map parameters
+const hexMapRadius = 50; // Large hexagonal map radius
+const gravity = 9.8; // Standard gravity pointing downward
+let currentGravity = gravity;
+const mapHeight = 2; // Height of the hexagonal terrain
 +const hexMapRadius = 50; // Large hexagonal map radius
 +const gravity = 9.8; // Standard gravity pointing downward
 +let currentGravity = gravity;
@@ -71,8 +74,8 @@
              
 -            // Check collision with planet
 -            if (checkTerrainCollision(projectile.position, planet)) {
-+            // Check collision with hex map
-+            if (checkTerrainCollision(projectile.position, hexMap)) {
+        color: 0x38bdf8,
+        emissive: 0x38bdf8,
                  const impactPos = oldPosition.clone();
                  const newParticles = createImpactEffect(impactPos, false);
                  impactParticles.push(...newParticles);
@@ -163,11 +166,11 @@
          for (let level = 0; level <= heightLevels; level++) {
              const hexMaterial = new THREE.MeshPhongMaterial({
 -                color: isMoon ? 0x888888 :
+function generateHexagonalMap(center) {
 -                    (level === heightLevels ? 
 -                        (noiseValue > 0.3 ? 0x888888 : 0x00aa00) : 
 -                        0x666666)
 +                color: level === heightLevels ? 
-+                    (noiseValue > 0.3 ? 0x888888 : 0x00aa00) : 
 +                    0x666666
              });
 
@@ -176,10 +179,14 @@
 -            const position = direction.multiplyScalar(radius + level * hexHeight);
 +            const position = new THREE.Vector3(
 +                pos.x,
+    const mapGroup = new THREE.Group();
+    mapGroup.position.copy(center);
 +                mapHeight + level * hexHeight,
 +                pos.z
 +            );
+    const segments = Math.ceil(hexMapRadius / (hexRadius * 2));
              hex.position.copy(position);
+    // Generate hexagonal grid pattern
 
 -            const up = position.clone().normalize();
 -            const forward = new THREE.Vector3(0, 1, 0);
@@ -190,6 +197,7 @@
 -            hex.quaternion.setFromRotationMatrix(rotationMatrix);
 +            // Hexes lay flat on the ground
 +            hex.rotation.x = 0;
+                const distanceFromCenter = Math.sqrt(x * x + z * z);
              
              hex.userData = { type: noiseValue > 0.3 ? 'stone' : 'grass' };
 -            planetGroup.add(hex);
@@ -200,6 +208,9 @@
 -    scene.add(planetGroup);
 +    scene.add(mapGroup);
      return { 
+                // Only include hexes within the map radius
+                if (distanceFromCenter <= hexMapRadius) {
+                    const pos = new THREE.Vector3(x, 0, z);
 -        group: planetGroup, 
 +        group: mapGroup, 
          center, 
@@ -233,6 +244,7 @@
      
 -    const surfaceForward = cameraForward.clone().sub(up.clone().multiplyScalar(cameraForward.dot(up))).normalize();
 -    const surfaceRight = cameraRight.clone().sub(up.clone().multiplyScalar(cameraRight.dot(up))).normalize();
+        const noiseValue = noise3D(pos.x * 0.1, 0, pos.z * 0.1);
 +    // For flat terrain, just use the horizontal components
 +    const surfaceForward = new THREE.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
 +    const surfaceRight = new THREE.Vector3(cameraRight.x, 0, cameraRight.z).normalize();
@@ -241,41 +253,113 @@
 @@ .. @@
      const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
 -    const distanceFromCenter = nextPosition.distanceTo(currentPlanet.center);
+                color: level === heightLevels ? 
+                    (noiseValue > 0.3 ? 0x888888 : 0x00aa00) : 
+                    0x666666
 +    
 +    // Check if player is within map bounds
 +    const distanceFromCenter = Math.sqrt(
 +        Math.pow(nextPosition.x - hexMap.center.x, 2) + 
 +        Math.pow(nextPosition.z - hexMap.center.z, 2)
+            const position = new THREE.Vector3(
+                pos.x,
+                mapHeight + level * hexHeight,
+                pos.z
+            );
 +    );
 +    
 +    // Keep player within hexagonal bounds
 +    if (distanceFromCenter > hexMapRadius - 1) {
 +        const direction = new THREE.Vector3(
 +            nextPosition.x - hexMap.center.x,
+            // Check collision with hex map
 +            0,
+            if (checkTerrainCollision(projectile.position, hexMap)) {
+            // Hexes lay flat on the ground
+            hex.rotation.x = 0;
 +            nextPosition.z - hexMap.center.z
 +        ).normalize();
 +        
+            mapGroup.add(hex);
 +        nextPosition.x = hexMap.center.x + direction.x * (hexMapRadius - 1);
 +        nextPosition.z = hexMap.center.z + direction.z * (hexMapRadius - 1);
 +        
 +        // Stop horizontal movement when hitting boundary
+    scene.add(mapGroup);
 +        playerVelocity.x = 0;
 +        playerVelocity.z = 0;
+        group: mapGroup, 
 +    }
+    
+    // Check if player is within map bounds
+    const distanceFromCenter = Math.sqrt(
+        Math.pow(nextPosition.x - hexMap.center.x, 2) + 
+        Math.pow(nextPosition.z - hexMap.center.z, 2)
+    );
+    
+    // Keep player within hexagonal bounds
+    if (distanceFromCenter > hexMapRadius - 1) {
+        const direction = new THREE.Vector3(
+            nextPosition.x - hexMap.center.x,
+            0,
+            nextPosition.z - hexMap.center.z
+        ).normalize();
+        
+        nextPosition.x = hexMap.center.x + direction.x * (hexMapRadius - 1);
+        nextPosition.z = hexMap.center.z + direction.z * (hexMapRadius - 1);
+        
+        // Stop horizontal movement when hitting boundary
+        playerVelocity.x = 0;
+        playerVelocity.z = 0;
+    }
      
 -    let terrainHeight = currentPlanet.radius;
+        radius: hexMapRadius,
+    let terrainHeight = mapHeight;
+        gravity: gravity,
 -    const playerDirection = nextPosition.clone().sub(currentPlanet.center).normalize();
 +    let terrainHeight = mapHeight;
      
+function checkTerrainCollision(position, hexMap) {
+    // Check if position is within the hexagonal map bounds
+    const mapCenter = hexMap.center;
+    const distanceFromCenter = Math.sqrt(
+    hexMap.hexPositions.forEach(hexPos => {
+        const distance = Math.sqrt(
+            Math.pow(nextPosition.x - hexPos.x, 2) + 
+            Math.pow(nextPosition.z - hexPos.z, 2)
+        );
+        Math.pow(position.x - mapCenter.x, 2) + 
+        Math.pow(position.z - mapCenter.z, 2)
+    );
+    
+            const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
+    // If outside hexagon bounds, collision with invisible walls
+    if (distanceFromCenter > hexMapRadius) {
+            terrainHeight = mapHeight + heightLevels * 0.5;
+        return true;
+    
+    let terrainHeight = mapHeight;
      let minDistance = Infinity;
 -    currentPlanet.hexPositions.forEach(hexPos => {
 -        const hexWorldPos = hexPos.clone()
+    // Ground collision
+    if (nextPosition.y < terrainHeight + 0.5) {
+        nextPosition.y = terrainHeight + 0.5;
 -            .normalize()
 -            .multiplyScalar(currentPlanet.radius)
 -            .add(currentPlanet.center);
+        const dot = playerVelocity.y;
 -        const distance = nextPosition.distanceTo(hexWorldPos);
+    hexMap.hexPositions.forEach(hexPos => {
+            playerVelocity.y = 0;
+        const distance = Math.sqrt(
+            Math.pow(position.x - hexPos.x, 2) + 
+            Math.pow(position.z - hexPos.z, 2)
+    if (!hexMap) return;
+        );
 +    hexMap.hexPositions.forEach(hexPos => {
+    const up = new THREE.Vector3(0, 1, 0); // Always point upward for flat terrain
 +        const distance = Math.sqrt(
 +            Math.pow(nextPosition.x - hexPos.x, 2) + 
 +            Math.pow(nextPosition.z - hexPos.z, 2)
@@ -287,11 +371,13 @@
 +            const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
              const heightLevels = Math.round((noiseValue + 1) * 1.5);
 -            terrainHeight = currentPlanet.radius + heightLevels * 0.5;
+            terrainHeight = mapHeight + heightLevels * 0.5;
 +            terrainHeight = mapHeight + heightLevels * 0.5;
          }
      });
 
 -    if (distanceFromCenter < terrainHeight + 0.5) {
+    return position.y < terrainHeight + 0.2;
 -        nextPosition.copy(currentPlanet.center)
 -            .add(playerDirection.multiplyScalar(terrainHeight + 0.5));
 +    // Ground collision
@@ -307,17 +393,22 @@
              isJumping = false;
 
              const fallSpeed = -dot;
+    // For flat terrain, up is always (0, 1, 0)
+    targetPlayerUp.set(0, 1, 0);
 @@ .. @@
  }
 
  function updateCamera() {
      currentCameraRotation.slerp(targetCameraRotation, cameraSmoothness);
+    playerForward.set(cameraForward.x, 0, cameraForward.z).normalize();
      
 -    targetPlayerUp.copy(player.position).sub(currentPlanet.center).normalize();
 +    // For flat terrain, up is always (0, 1, 0)
 +    targetPlayerUp.set(0, 1, 0);
      playerUp.lerp(targetPlayerUp, cameraSmoothness);
      playerUp.normalize();
+    // Apply downward gravity
+    playerVelocity.add(new THREE.Vector3(0, -currentGravity * delta, 0));
 
      const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
 -    playerForward.copy(cameraForward).sub(playerUp.clone().multiplyScalar(cameraForward.dot(playerUp))).normalize();
@@ -327,6 +418,9 @@
      const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(currentCameraRotation);
 @@ .. @@
  }
+    // For flat terrain, just use the horizontal components
+    const surfaceForward = new THREE.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
+    const surfaceRight = new THREE.Vector3(cameraRight.x, 0, cameraRight.z).normalize();
 
  // Initialize game
 -const planet = generatePlanet(new THREE.Vector3(0, 0, 0), planetRadius);
