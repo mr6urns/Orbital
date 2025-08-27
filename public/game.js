@@ -187,57 +187,70 @@ scene.add(starfield);
 
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
-    const barrierGroup = new THREE.Group();
-    const wallHeight = 20; // Make them tall
-    const wallRadius = hexMapRadius - 0.5; // Position slightly inside boundary
-
-    // Create 6 tall barriers forming perfect hexagon perimeter
-    for (let side = 0; side < 6; side++) {
-        // Calculate the two vertices of this hexagon edge
-        const angle1 = side * Math.PI / 3;
-        const angle2 = (side + 1) * Math.PI / 3;
+    const wallHeight = 20;
+    const wallRadius = hexMapRadius;
+    
+    // Create hollow hexagon shape
+    const hexShape = new THREE.Shape();
+    
+    // Create outer hexagon
+    for (let i = 0; i <= 6; i++) {
+        const angle = (i * Math.PI) / 3;
+        const x = Math.cos(angle) * wallRadius;
+        const z = Math.sin(angle) * wallRadius;
         
-        const vertex1X = Math.cos(angle1) * wallRadius;
-        const vertex1Z = Math.sin(angle1) * wallRadius;
-        const vertex2X = Math.cos(angle2) * wallRadius;
-        const vertex2Z = Math.sin(angle2) * wallRadius;
-        
-        // Calculate center point and length of this edge
-        const centerX = (vertex1X + vertex2X) / 2;
-        const centerZ = (vertex1Z + vertex2Z) / 2;
-        const wallLength = Math.sqrt(
-            Math.pow(vertex2X - vertex1X, 2) + 
-            Math.pow(vertex2Z - vertex1Z, 2)
-        );
-        
-        // Calculate angle for wall rotation (perpendicular to edge)
-        const edgeAngle = Math.atan2(vertex2Z - vertex1Z, vertex2X - vertex1X);
-        
-        // Create tall barrier wall
-        const barrierGeometry = new THREE.PlaneGeometry(wallLength, wallHeight, 1, 1);
-        const barrierMaterial = new THREE.MeshBasicMaterial({
-            color: 0x38bdf8,
-            transparent: true,
-            opacity: 0.6,
-            side: THREE.DoubleSide,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
-        });
-        
-        const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
-        barrier.position.set(centerX, mapHeight + wallHeight / 2, centerZ);
-        barrier.rotation.y = edgeAngle + Math.PI / 2; // Rotate to be perpendicular to edge
-        
-        barrier.userData = {
-            originalOpacity: 0.6,
-            pulseSpeed: 0.5,
-            pulseOffset: side * Math.PI / 3
-        };
-        
-        barrierGroup.add(barrier);
+        if (i === 0) {
+            hexShape.moveTo(x, z);
+        } else {
+            hexShape.lineTo(x, z);
+        }
     }
     
-    return barrierGroup;
+    // Create inner hexagon (hole) - slightly smaller
+    const innerRadius = wallRadius - 1;
+    const holePath = new THREE.Path();
+    
+    for (let i = 0; i <= 6; i++) {
+        const angle = (i * Math.PI) / 3;
+        const x = Math.cos(angle) * innerRadius;
+        const z = Math.sin(angle) * innerRadius;
+        
+        if (i === 0) {
+            holePath.moveTo(x, z);
+        } else {
+            holePath.lineTo(x, z);
+        }
+    }
+    
+    // Add hole to shape
+    hexShape.holes.push(holePath);
+    
+    // Extrude the hollow hexagon to create walls
+    const extrudeSettings = {
+        depth: wallHeight,
+        bevelEnabled: false
+    };
+    
+    const barrierGeometry = new THREE.ExtrudeGeometry(hexShape, extrudeSettings);
+    const barrierMaterial = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    });
+    
+    const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+    barrier.position.set(0, mapHeight, 0);
+    barrier.rotation.x = -Math.PI / 2; // Rotate to stand upright
+    
+    barrier.userData = {
+        originalOpacity: 0.6,
+        pulseSpeed: 0.5
+    };
+    
+    return barrier;
 }
 
 const barrierWall = createBarrierWall();
@@ -938,15 +951,11 @@ function animate(currentTime) {
         updateImpactEffects(fixedTimeStep);
         
         // Animate barrier wall particles
-        if (barrierWall) {
-            barrierWall.children.forEach(child => {
-                if (child.userData.pulseSpeed !== undefined) {
-                    // Animate fog walls with subtle pulsing
-                    child.userData.pulseOffset += child.userData.pulseSpeed * fixedTimeStep;
-                    const pulse = (Math.sin(child.userData.pulseOffset) + 1) * 0.5;
-                    child.material.opacity = child.userData.originalOpacity * (0.7 + pulse * 0.3);
-                }
-            });
+        if (barrierWall && barrierWall.userData.pulseSpeed !== undefined) {
+            // Animate hollow hexagon wall with subtle pulsing
+            barrierWall.userData.pulseOffset = (barrierWall.userData.pulseOffset || 0) + barrierWall.userData.pulseSpeed * fixedTimeStep;
+            const pulse = (Math.sin(barrierWall.userData.pulseOffset) + 1) * 0.5;
+            barrierWall.material.opacity = barrierWall.userData.originalOpacity * (0.7 + pulse * 0.3);
         }
         
         // Rotate starfield slowly
