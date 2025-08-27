@@ -39,6 +39,11 @@ const gravity = 9.8; // Standard gravity pointing downward
 let currentGravity = gravity;
 const mapHeight = 2; // Height of the hexagonal terrain
 
+// Calculate actual map boundary based on hex generation
+const hexRadius = 0.866;
+const segments = Math.ceil(hexMapRadius / (hexRadius * 2));
+const actualMapRadius = segments * hexRadius * 2; // Actual extent of generated hexes
+
 // Noise for terrain generation
 const noise2D = createNoise2D();
 const noise3D = createNoise3D();
@@ -188,7 +193,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 5; // Back to original position
+    const wallRadius = actualMapRadius + 3; // Just outside the actual map boundary
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -425,7 +430,7 @@ function updateImpactEffects(delta) {
 
 function checkTerrainCollision(position, hexMap) {
     // Check hexagonal barrier collision for projectiles
-    const barrierRadius = hexMapRadius - 11;
+    const barrierRadius = actualMapRadius - 2;
     if (!isInsideHexagon(position.x, position.z, barrierRadius)) {
         return true;
     }
@@ -901,7 +906,7 @@ function updatePlayer(delta) {
     nextPosition.z += velocityDelta.z;
     
     // Hexagonal barrier check - prevent movement outside the hexagon
-    const barrierRadius = hexMapRadius - 11;
+    const barrierRadius = actualMapRadius - 2; // Just inside the actual map boundary
     if (!isInsideHexagon(nextPosition.x, nextPosition.z, barrierRadius)) {
         // Stop movement - don't allow position to change
         nextPosition.x = player.position.x;
