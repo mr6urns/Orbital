@@ -862,35 +862,6 @@ function updatePlayer(delta) {
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Check collision with barrier wall - solid physical object
-    const barrierDistance = hexMapRadius - 4;
-    if (distanceFromCenter >= barrierDistance) {
-        // Calculate direction from center to player
-        const directionX = nextPosition.x - hexMap.center.x;
-        const directionZ = nextPosition.z - hexMap.center.z;
-        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
-        
-        if (length > 0) {
-            // Normalize direction
-            const normalX = directionX / length;
-            const normalZ = directionZ / length;
-            
-            // Clamp position to barrier boundary
-            nextPosition.x = hexMap.center.x + normalX * (barrierDistance - 0.1);
-            nextPosition.z = hexMap.center.z + normalZ * (barrierDistance - 0.1);
-            
-            // Remove velocity components that would push through barrier
-            const velocityDotNormal = playerVelocity.x * normalX + playerVelocity.z * normalZ;
-            if (velocityDotNormal > 0) {
-                playerVelocity.x -= normalX * velocityDotNormal;
-                playerVelocity.z -= normalZ * velocityDotNormal;
-            }
-            
-            // Add slight pushback force
-            playerVelocity.x -= normalX * 2;
-            playerVelocity.z -= normalZ * 2;
-        }
-    }
     
     let terrainHeight = mapHeight;
     
