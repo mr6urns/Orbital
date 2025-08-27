@@ -981,7 +981,7 @@ function animate(currentTime) {
             // Animate hollow hexagon wall with subtle pulsing
             barrierWall.userData.pulseOffset = (barrierWall.userData.pulseOffset || 0) + barrierWall.userData.pulseSpeed * fixedTimeStep;
             const pulse = (Math.sin(barrierWall.userData.pulseOffset) + 1) * 0.5;
-            barrierWall.material.opacity = barrierWall.userData.originalOpacity * (0.7 + pulse * 0.3);
+            barrierWall.userData.material.uniforms.opacity.value = barrierWall.userData.originalOpacity * (0.7 + pulse * 0.3);
         }
         
         // Rotate starfield slowly
