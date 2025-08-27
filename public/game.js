@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 9; // Moved in 4 more units from -5 to -9
+    const wallRadius = hexMapRadius - 5; // Back to original position
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -430,7 +430,7 @@ function checkTerrainCollision(position, hexMap) {
     );
     
     // Blue barrier blocks projectiles too
-    if (distanceFromCenter > hexMapRadius - 9) {
+    if (distanceFromCenter > hexMapRadius - 13) {
         return true;
     }
     
@@ -898,11 +898,11 @@ function updatePlayer(delta) {
         nextPosition.z * nextPosition.z
     );
     
-    if (distanceFromCenter > hexMapRadius - 9) {
+    if (distanceFromCenter > hexMapRadius - 13) {
         // Move player back to barrier edge
         const direction = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
-        nextPosition.x = direction.x * (hexMapRadius - 9);
-        nextPosition.z = direction.z * (hexMapRadius - 9);
+        nextPosition.x = direction.x * (hexMapRadius - 13);
+        nextPosition.z = direction.z * (hexMapRadius - 13);
         playerVelocity.x = 0;
         playerVelocity.z = 0;
     }
