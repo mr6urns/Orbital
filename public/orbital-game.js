@@ -1,5 +1,5 @@
 // Debug logging
-console.log('Game.js loading...');
+console.log('Explore Game.js loading...');
 
 import * as THREE from 'three';
 import { createNoise2D, createNoise3D } from 'simplex-noise';

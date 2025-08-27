@@ -1,4 +1,4 @@
-# ORBITAL Character Creation System
+# EXPLORE Character Creation System
 
 A React-based 3D character creation system for space exploration games.
 
