@@ -209,28 +209,6 @@ function createStarfield() {
             });
             
             const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-            particle.position.set(
-                particleX,
-                mapHeight + 2 + Math.random() * (wallHeight - 4),
-                particleZ
-            );
-            
-            particle.userData = {
-                floatSpeed: 0.15 + Math.random() * 0.2,
-                floatOffset: Math.random() * Math.PI * 2,
-                originalY: particle.position.y
-            };
-            
-            barrierGroup.add(particle);
-        }
-    }
-    
-    return barrierGroup;
-}
-
-const barrierWall = createBarrierWall();
-scene.add(barrierWall);
-
 // Health system
 const maxHealth = 100;
 let currentHealth = maxHealth;
