@@ -190,84 +190,89 @@ function createBarrierWall() {
     const barrierGroup = new THREE.Group();
     const wallHeight = 15;
     
-    // Create 6 hexagon sides as smooth fog walls
+    // Create perfect hexagon barrier that matches the map exactly
+    const hexRadius = hexMapRadius - 1; // Slightly inside the collision boundary
+    
     for (let side = 0; side < 6; side++) {
-        const angle1 = (side / 6) * Math.PI * 2;
-        const angle2 = ((side + 1) / 6) * Math.PI * 2;
+        // Calculate exact hexagon vertices
+        const angle1 = (side * Math.PI) / 3;
+        const angle2 = ((side + 1) * Math.PI) / 3;
         
-        // Calculate the two corner points of this hexagon side
-        const x1 = Math.cos(angle1) * (hexMapRadius - 2);
-        const z1 = Math.sin(angle1) * (hexMapRadius - 2);
-        const x2 = Math.cos(angle2) * (hexMapRadius - 2);
-        const z2 = Math.sin(angle2) * (hexMapRadius - 2);
+        // Perfect hexagon corner points
+        const x1 = Math.cos(angle1) * hexRadius;
+        const z1 = Math.sin(angle1) * hexRadius;
+        const x2 = Math.cos(angle2) * hexRadius;
+        const z2 = Math.sin(angle2) * hexRadius;
         
-        // Calculate side length and center
+        // Calculate wall properties
         const sideLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
         const centerX = (x1 + x2) / 2;
         const centerZ = (z1 + z2) / 2;
+        const wallAngle = Math.atan2(z2 - z1, x2 - x1);
         
-        // Create multiple fog layers for this side
+        // Create 3 fog layers for depth
         for (let layer = 0; layer < 3; layer++) {
-            const layerOffset = (layer - 1) * 0.5; // Spread layers inward/outward
+            const layerOffset = (layer - 1) * 0.3;
             
-            // Create a plane geometry for smooth fog wall
-            const fogGeometry = new THREE.PlaneGeometry(sideLength + 2, wallHeight, 8, 8);
+            const fogGeometry = new THREE.PlaneGeometry(sideLength, wallHeight, 1, 1);
             
-            // Create fog material with very low opacity
             const fogMaterial = new THREE.MeshBasicMaterial({
                 color: 0x38bdf8,
                 transparent: true,
-                opacity: 0.02 + layer * 0.01, // Very subtle layering
+                opacity: 0.015 + layer * 0.008,
                 side: THREE.DoubleSide,
-                depthWrite: false, // Prevents z-fighting
-                blending: THREE.AdditiveBlending // Makes fog blend nicely
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
             });
             
             const fogWall = new THREE.Mesh(fogGeometry, fogMaterial);
             
-            // Position and rotate the fog wall to align with hexagon side
-            const sideAngle = Math.atan2(z2 - z1, x2 - x1);
-            fogWall.position.set(
-                centerX + Math.cos(sideAngle + Math.PI/2) * layerOffset,
-                mapHeight + wallHeight / 2,
-                centerZ + Math.sin(sideAngle + Math.PI/2) * layerOffset
-            );
-            fogWall.rotation.y = sideAngle + Math.PI/2;
+            // Position wall exactly on hexagon edge
+            const offsetX = Math.cos(wallAngle + Math.PI/2) * layerOffset;
+            const offsetZ = Math.sin(wallAngle + Math.PI/2) * layerOffset;
             
-            // Add subtle animation
+            fogWall.position.set(
+                centerX + offsetX,
+                mapHeight + wallHeight / 2,
+                centerZ + offsetZ
+            );
+            
+            // Rotate wall to be perpendicular to hexagon edge
+            fogWall.rotation.y = wallAngle + Math.PI/2;
+            
             fogWall.userData = {
                 originalOpacity: fogMaterial.opacity,
-                pulseSpeed: 0.5 + Math.random() * 0.3,
+                pulseSpeed: 0.3 + Math.random() * 0.2,
                 pulseOffset: Math.random() * Math.PI * 2
             };
             
             barrierGroup.add(fogWall);
         }
         
-        // Add some floating particles along each side for extra atmosphere
-        const particleCount = 8;
+        // Add floating particles along wall
+        const particleCount = 6;
         for (let p = 0; p < particleCount; p++) {
-            const t = p / (particleCount - 1); // 0 to 1 along the side
-            const particleX = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 2;
-            const particleZ = z1 + (z2 - z1) * t + (Math.random() - 0.5) * 2;
+            const t = (p + 0.5) / particleCount;
+            const particleX = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 1;
+            const particleZ = z1 + (z2 - z1) * t + (Math.random() - 0.5) * 1;
             
-            const particleGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+            const particleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
             const particleMaterial = new THREE.MeshBasicMaterial({
                 color: 0x38bdf8,
                 transparent: true,
-                opacity: 0.1,
+                opacity: 0.06,
                 blending: THREE.AdditiveBlending
             });
             
             const particle = new THREE.Mesh(particleGeometry, particleMaterial);
             particle.position.set(
                 particleX,
-                mapHeight + Math.random() * wallHeight,
+                mapHeight + 2 + Math.random() * (wallHeight - 4),
                 particleZ
             );
             
             particle.userData = {
-                floatSpeed: 0.2 + Math.random() * 0.3,
+                floatSpeed: 0.15 + Math.random() * 0.2,
                 floatOffset: Math.random() * Math.PI * 2,
                 originalY: particle.position.y
             };
