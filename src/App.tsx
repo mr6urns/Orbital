@@ -125,7 +125,7 @@ function App() {
     requestAnimationFrame(() => {
       transition.style.opacity = '1';
       setTimeout(() => {
-        window.location.href = gameMode === 'single' ? 'game-single.html' : 'game-multi.html';
+        window.location.href = gameMode === 'single' ? '/game-single.html' : '/game-multi.html';
       }, 800);
     });
   };
