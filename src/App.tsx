@@ -38,9 +38,7 @@ const bodyColors = [
 
 function App() {
   const [isLoading, setIsLoading] = useState(false);
-  const [showQueue, setShowQueue] = useState(false);
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
-  const [gameMode, setGameMode] = useState<'single' | 'multi' | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<'helmet' | 'suit' | 'blaster' | 'color'>('helmet');
   
@@ -50,13 +48,6 @@ function App() {
   const [selectedBlaster, setSelectedBlaster] = useState(0);
   const [selectedBodyColor, setSelectedBodyColor] = useState(0);
   
-  const [players, setPlayers] = useState([
-    { id: 1, name: 'Player 1', ready: true },
-    { id: 2, name: null, ready: false },
-    { id: 3, name: null, ready: false },
-    { id: 4, name: null, ready: false }
-  ]);
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -68,7 +59,7 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const startGame = () => {
+  const startGame = (mode: 'single' | 'multi') => {
     setIsLoading(true);
     
     // Save character customization to localStorage
@@ -104,32 +95,9 @@ function App() {
     requestAnimationFrame(() => {
       transition.style.opacity = '1';
       setTimeout(() => {
-        window.location.href = gameMode === 'single' ? '/game-single.html' : '/game-multi.html';
+        window.location.href = mode === 'single' ? '/game-single.html' : '/game-multi.html';
       }, 800);
     });
-  };
-
-  const startMultiplayer = () => {
-    setShowQueue(true);
-    const joinInterval = setInterval(() => {
-      setPlayers(current => {
-        const nextEmpty = current.findIndex(p => !p.name);
-        if (nextEmpty === -1) {
-          clearInterval(joinInterval);
-          setTimeout(() => {
-            startGame();
-          }, 1000);
-          return current;
-        }
-        const updated = [...current];
-        updated[nextEmpty] = {
-          ...updated[nextEmpty],
-          name: `Player ${nextEmpty + 1}`,
-          ready: true
-        };
-        return updated;
-      });
-    }, 2000);
   };
 
   const getCurrentItems = () => {
@@ -170,50 +138,6 @@ function App() {
       default: return <Shield size={16} />;
     }
   };
-
-  if (showQueue) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden p-4">
-        <div className="fixed inset-0">
-          <div className="stars"></div>
-          <div className="twinkling"></div>
-        </div>
-
-        <div className="relative z-10 bg-black/80 p-4 sm:p-6 md:p-8 rounded-lg border border-cyan-500 shadow-[0_0_40px_rgba(56,189,248,0.3)] w-full max-w-md">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-6 md:mb-8 text-center">
-            Waiting for Players...
-          </h2>
-
-          <div className="grid gap-3 sm:gap-4">
-            {players.map((player, index) => (
-              <div 
-                key={player.id}
-                className={`flex items-center justify-between p-3 sm:p-4 rounded-lg ${
-                  player.ready 
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500'
-                    : 'bg-white/5 border border-white/10'
-                }`}
-              >
-                <span className="text-white font-mono text-sm sm:text-base">
-                  {player.name || `Waiting for Player ${index + 1}`}
-                </span>
-                {player.ready ? (
-                  <span className="text-cyan-400 text-sm sm:text-base">Ready</span>
-                ) : (
-                  <div className="animate-spin text-gray-500">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (showCharacterCreation) {
     const currentItems = getCurrentItems();
@@ -369,24 +293,24 @@ function App() {
               <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                 <button
                   onClick={() => {
+                    // For now, just close character creation
                     setShowCharacterCreation(false);
-                    setGameMode(null);
                   }}
                   className="px-4 sm:px-6 py-3 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors text-sm sm:text-base font-medium"
                 >
                   Back
                 </button>
                 <button
-                  onClick={() => {
-                    if (gameMode === 'single') {
-                      startGame();
-                    } else {
-                      startMultiplayer();
-                    }
-                  }}
+                  onClick={() => startGame('single')}
                   className="px-4 sm:px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] text-sm sm:text-base hover:scale-105"
                 >
-                  Continue
+                  Single Player
+                </button>
+                <button
+                  onClick={() => startGame('multi')}
+                  className="px-4 sm:px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] text-sm sm:text-base hover:scale-105"
+                >
+                  Multiplayer
                 </button>
               </div>
             </div>
@@ -396,58 +320,20 @@ function App() {
     );
   }
 
+  // Show character creation by default
+  if (!showCharacterCreation) {
+    setShowCharacterCreation(true);
+  }
+
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden p-4">
       <div className="fixed inset-0">
         <div className="stars"></div>
         <div className="twinkling"></div>
       </div>
 
-      <div className="relative z-10 text-center px-4 w-full max-w-md sm:max-w-lg">
-        <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-8 sm:mb-12 tracking-widest animate-[float_6s_ease-in-out_infinite]">
-          ORBITAL
-        </h1>
-        
-        <div className="flex flex-col gap-4 sm:gap-6 items-center">
-          <button 
-            onClick={() => {
-              setGameMode('single');
-              setShowCharacterCreation(true);
-            }}
-            disabled={isLoading}
-            className={`group relative px-6 sm:px-8 py-3 sm:py-4 w-full max-w-xs overflow-hidden rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold text-base sm:text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(56,189,248,0.6)] ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors duration-300"></div>
-            <span className="flex items-center justify-center gap-2">
-              <Rocket className={isLoading ? 'animate-spin' : 'animate-pulse'} size={isMobile ? 20 : 24} />
-              {isLoading ? 'Launching...' : 'Single Player'}
-            </span>
-          </button>
-
-          <button 
-            onClick={() => {
-              setGameMode('multi');
-              setShowCharacterCreation(true);
-            }}
-            disabled={isLoading}
-            className="group relative px-6 sm:px-8 py-3 sm:py-4 w-full max-w-xs overflow-hidden rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold text-base sm:text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(56,189,248,0.6)]"
-          >
-            <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors duration-300"></div>
-            <span className="flex items-center justify-center gap-2">
-              <Users className={isLoading ? 'animate-spin' : 'animate-pulse'} size={isMobile ? 20 : 24} />
-              {isLoading ? 'Launching...' : 'Player vs Player'}
-            </span>
-          </button>
-        </div>
-
-        {/* Mobile Instructions */}
-        {isMobile && (
-          <div className="mt-8 p-4 bg-black/40 rounded-lg border border-cyan-500/30">
-            <p className="text-xs text-gray-400 text-center">
-              For the best experience, use landscape orientation when playing
-            </p>
-          </div>
-        )}
+      <div className="relative z-10 text-center">
+        <p className="text-white">Loading character creation...</p>
       </div>
     </div>
   );
