@@ -918,9 +918,15 @@ function updatePlayer(delta) {
     player.position.copy(nextPosition);
 
     // Keep player upright without rotating with camera
-    player.rotation.x = 0;
-    player.rotation.y = 0;
-    player.rotation.z = 0;
+    // Make player body follow the camera direction horizontally, but keep feet on ground
+    const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
+    const horizontalForward = new THREE.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
+    
+    // Calculate rotation to face camera direction
+    const targetRotation = Math.atan2(horizontalForward.x, horizontalForward.z);
+    player.rotation.y = targetRotation;
+    player.rotation.x = 0; // Keep feet on ground
+    player.rotation.z = 0; // No roll
 }
 
 function updateCamera() {
