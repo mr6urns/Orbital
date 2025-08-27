@@ -9,31 +9,31 @@ const helmets = [
   { id: 'scout', name: 'Scout Visor', color: '#22c55e', unlocked: true },
   { id: 'heavy', name: 'Heavy Helmet', color: '#ef4444', unlocked: true },
   { id: 'tech', name: 'Tech Helmet', color: '#a855f7', unlocked: true },
-  { id: 'stealth', name: 'Stealth Helmet', color: '#64748b', unlocked: false }
+  { id: 'stealth', name: 'Stealth Helmet', color: '#64748b', unlocked: true }
 ];
 
 const suits = [
   { id: 'standard', name: 'Standard Suit', color: '#ffffff', unlocked: true },
   { id: 'tactical', name: 'Tactical Suit', color: '#626262', unlocked: true },
   { id: 'heavy', name: 'Heavy Armor', color: '#141414', unlocked: true },
-  { id: 'explorer', name: 'Explorer Suit', color: '#f59e0b', unlocked: false },
-  { id: 'stealth', name: 'Stealth Suit', color: '#1f2937', unlocked: false }
+  { id: 'explorer', name: 'Explorer Suit', color: '#f59e0b', unlocked: true },
+  { id: 'stealth', name: 'Stealth Suit', color: '#1f2937', unlocked: true }
 ];
 
 const blasters = [
   { id: 'standard', name: 'Standard Blaster', unlocked: true },
   { id: 'rapid', name: 'Rapid Fire', unlocked: true },
-  { id: 'heavy', name: 'Heavy Cannon', unlocked: false },
-  { id: 'plasma', name: 'Plasma Rifle', unlocked: false }
+  { id: 'heavy', name: 'Heavy Cannon', unlocked: true },
+  { id: 'plasma', name: 'Plasma Rifle', unlocked: true }
 ];
 
 const bodyColors = [
   { id: 'white', name: 'Arctic White', color: '#ffffff', unlocked: true },
   { id: 'gray', name: 'Steel Gray', color: '#6b7280', unlocked: true },
   { id: 'blue', name: 'Deep Blue', color: '#1e40af', unlocked: true },
-  { id: 'red', name: 'Crimson Red', color: '#dc2626', unlocked: false },
-  { id: 'green', name: 'Forest Green', color: '#059669', unlocked: false },
-  { id: 'purple', name: 'Royal Purple', color: '#7c3aed', unlocked: false }
+  { id: 'red', name: 'Crimson Red', color: '#dc2626', unlocked: true },
+  { id: 'green', name: 'Forest Green', color: '#059669', unlocked: true },
+  { id: 'purple', name: 'Royal Purple', color: '#7c3aed', unlocked: true }
 ];
 
 function App() {
