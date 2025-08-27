@@ -185,76 +185,94 @@ function createStarfield() {
 const starfield = createStarfield();
 scene.add(starfield);
 
-// Create barrier wall around hexagon perimeter
+// Create smooth hexagonal fog barrier
 function createBarrierWall() {
     const barrierGroup = new THREE.Group();
-    const wallHeight = 20;
-    const wallThickness = 0.5;
-    const segments = 60; // More segments for smoother hexagon shape
+    const wallHeight = 15;
     
-    for (let i = 0; i < segments; i++) {
-        const angle = (i / segments) * Math.PI * 2;
+    // Create 6 hexagon sides as smooth fog walls
+    for (let side = 0; side < 6; side++) {
+        const angle1 = (side / 6) * Math.PI * 2;
+        const angle2 = ((side + 1) / 6) * Math.PI * 2;
         
-        // Calculate position on the hexagon perimeter
-        const x = Math.cos(angle) * (hexMapRadius - 1);
-        const z = Math.sin(angle) * (hexMapRadius - 1);
+        // Calculate the two corner points of this hexagon side
+        const x1 = Math.cos(angle1) * (hexMapRadius - 2);
+        const z1 = Math.sin(angle1) * (hexMapRadius - 2);
+        const x2 = Math.cos(angle2) * (hexMapRadius - 2);
+        const z2 = Math.sin(angle2) * (hexMapRadius - 2);
         
-        // Create individual barrier particle
-        const particleGeometry = new THREE.BoxGeometry(0.8, wallHeight, 0.8);
+        // Calculate side length and center
+        const sideLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+        const centerX = (x1 + x2) / 2;
+        const centerZ = (z1 + z2) / 2;
         
-        // Create fog-like barrier material
-        const particleMaterial = new THREE.MeshPhongMaterial({
-            color: 0x38bdf8,
-            transparent: true,
-            opacity: 0.03 + Math.random() * 0.02, // Very subtle, fog-like
-            side: THREE.DoubleSide
-        });
-        
-        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-        
-        // Position the particle
-        particle.position.set(x, mapHeight + wallHeight / 2, z);
-        
-        // Add floating animation data
-        particle.userData = {
-            originalY: particle.position.y,
-            floatSpeed: 0.3 + Math.random() * 0.4,
-            floatOffset: Math.random() * Math.PI * 2,
-            originalOpacity: particleMaterial.opacity
-        };
-        
-        barrierGroup.add(particle);
-    }
-    
-    // Add some additional fog layers for depth
-    for (let layer = 0; layer < 3; layer++) {
-        const layerRadius = hexMapRadius - 1 + layer * 0.3;
-        const layerSegments = 40 + layer * 10;
-        
-        for (let i = 0; i < layerSegments; i++) {
-            const angle = (i / layerSegments) * Math.PI * 2;
-            const x = Math.cos(angle) * layerRadius;
-            const z = Math.sin(angle) * layerRadius;
+        // Create multiple fog layers for this side
+        for (let layer = 0; layer < 3; layer++) {
+            const layerOffset = (layer - 1) * 0.5; // Spread layers inward/outward
             
-            const fogGeometry = new THREE.BoxGeometry(0.5, wallHeight * 0.8, 0.5);
-            const fogMaterial = new THREE.MeshPhongMaterial({
+            // Create a plane geometry for smooth fog wall
+            const fogGeometry = new THREE.PlaneGeometry(sideLength + 2, wallHeight, 8, 8);
+            
+            // Create fog material with very low opacity
+            const fogMaterial = new THREE.MeshBasicMaterial({
                 color: 0x38bdf8,
                 transparent: true,
-                opacity: 0.01 + Math.random() * 0.01, // Even more subtle
-                side: THREE.DoubleSide
+                opacity: 0.02 + layer * 0.01, // Very subtle layering
+                side: THREE.DoubleSide,
+                depthWrite: false, // Prevents z-fighting
+                blending: THREE.AdditiveBlending // Makes fog blend nicely
             });
             
-            const fogParticle = new THREE.Mesh(fogGeometry, fogMaterial);
-            fogParticle.position.set(x, mapHeight + wallHeight * 0.4, z);
+            const fogWall = new THREE.Mesh(fogGeometry, fogMaterial);
             
-            fogParticle.userData = {
-                originalY: fogParticle.position.y,
-                floatSpeed: 0.2 + Math.random() * 0.3,
-                floatOffset: Math.random() * Math.PI * 2,
-                originalOpacity: fogMaterial.opacity
+            // Position and rotate the fog wall to align with hexagon side
+            const sideAngle = Math.atan2(z2 - z1, x2 - x1);
+            fogWall.position.set(
+                centerX + Math.cos(sideAngle + Math.PI/2) * layerOffset,
+                mapHeight + wallHeight / 2,
+                centerZ + Math.sin(sideAngle + Math.PI/2) * layerOffset
+            );
+            fogWall.rotation.y = sideAngle + Math.PI/2;
+            
+            // Add subtle animation
+            fogWall.userData = {
+                originalOpacity: fogMaterial.opacity,
+                pulseSpeed: 0.5 + Math.random() * 0.3,
+                pulseOffset: Math.random() * Math.PI * 2
             };
             
-            barrierGroup.add(fogParticle);
+            barrierGroup.add(fogWall);
+        }
+        
+        // Add some floating particles along each side for extra atmosphere
+        const particleCount = 8;
+        for (let p = 0; p < particleCount; p++) {
+            const t = p / (particleCount - 1); // 0 to 1 along the side
+            const particleX = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 2;
+            const particleZ = z1 + (z2 - z1) * t + (Math.random() - 0.5) * 2;
+            
+            const particleGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+            const particleMaterial = new THREE.MeshBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.1,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(
+                particleX,
+                mapHeight + Math.random() * wallHeight,
+                particleZ
+            );
+            
+            particle.userData = {
+                floatSpeed: 0.2 + Math.random() * 0.3,
+                floatOffset: Math.random() * Math.PI * 2,
+                originalY: particle.position.y
+            };
+            
+            barrierGroup.add(particle);
         }
     }
     
@@ -955,13 +973,15 @@ function animate(currentTime) {
         // Animate barrier wall particles
         if (barrierWall) {
             barrierWall.children.forEach(child => {
-                if (child.userData.floatSpeed) {
+                if (child.userData.pulseSpeed) {
+                    // Animate fog walls with subtle pulsing
+                    child.userData.pulseOffset += child.userData.pulseSpeed * fixedTimeStep;
+                    const pulse = (Math.sin(child.userData.pulseOffset) + 1) * 0.5;
+                    child.material.opacity = child.userData.originalOpacity * (0.5 + pulse * 0.5);
+                } else if (child.userData.floatSpeed) {
+                    // Animate floating particles
                     child.userData.floatOffset += child.userData.floatSpeed * fixedTimeStep;
                     child.position.y = child.userData.originalY + Math.sin(child.userData.floatOffset) * 0.5;
-                    
-                    // Pulse opacity
-                    const pulseIntensity = (Math.sin(child.userData.floatOffset * 2) + 1) * 0.5;
-                    child.material.opacity = 0.2 + pulseIntensity * 0.3;
                 }
             });
         }
