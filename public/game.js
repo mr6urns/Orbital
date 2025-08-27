@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 5; // Move wall inward by 5 units (back 3 from -8)
+    const wallRadius = hexMapRadius - 3; // Barrier at map edge
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -207,7 +207,7 @@ function createBarrierWall() {
     }
     
     // Create inner hexagon (hole) - slightly smaller
-    const innerRadius = wallRadius - 1;
+    const innerRadius = wallRadius - 2; // Thicker wall
     const holePath = new THREE.Path();
     
     for (let i = 0; i <= 6; i++) {
@@ -849,7 +849,7 @@ function updatePlayer(delta) {
     );
     
     // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 7; // Barrier collision matches the moved wall (back 3 units)
+    const barrierDistance = hexMapRadius - 4; // Barrier collision distance
     if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
@@ -929,17 +929,6 @@ function updatePlayer(delta) {
 
     player.position.copy(nextPosition);
 
-    // Keep player upright without rotating with camera
-    // Make player body follow the camera direction horizontally, but keep feet on ground
-    const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentCameraRotation);
-    const horizontalForward = new THREE.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
-    
-    // Calculate rotation to face camera direction
-    const targetRotation = Math.atan2(horizontalForward.x, horizontalForward.z) + Math.PI;
-    player.rotation.y = targetRotation;
-    player.rotation.x = 0; // Keep feet on ground
-    player.rotation.z = 0; // No roll
-}
     // Walking animation
     if (!isJumping && !jetpackInput) {
         const isMoving = isMobile ? 
@@ -949,8 +938,31 @@ function updatePlayer(delta) {
         if (isMoving) {
             walkCycle += walkSpeed * delta;
             
-            // Get the limb joints from the player group
-            const leftLeg = player.children[6];   // Left leg
+            const leftLegJoint = player.children[5];
+            const rightLegJoint = player.children[6];
+            const leftArmJoint = player.children[3];
+            const rightArmJoint = player.children[4];
+            
+            if (leftLegJoint) leftLegJoint.rotation.x = Math.sin(walkCycle) * legAmplitude;
+            if (rightLegJoint) rightLegJoint.rotation.x = Math.sin(walkCycle + Math.PI) * legAmplitude;
+            if (leftArmJoint) leftArmJoint.rotation.x = Math.sin(walkCycle + Math.PI) * armSwingAmplitude;
+            if (rightArmJoint && !isRightArmSwinging) {
+                rightArmJoint.rotation.x = Math.sin(walkCycle) * armSwingAmplitude;
+            }
+        } else {
+            // Reset limb positions when not moving
+            const leftLegJoint = player.children[5];
+            const rightLegJoint = player.children[6];
+            const leftArmJoint = player.children[3];
+            const rightArmJoint = player.children[4];
+            
+            if (leftLegJoint) leftLegJoint.rotation.x = 0;
+            if (rightLegJoint) rightLegJoint.rotation.x = 0;
+            if (leftArmJoint) leftArmJoint.rotation.x = 0;
+            if (rightArmJoint) rightArmJoint.rotation.x = 0;
+        }
+    }
+}
             const rightLeg = player.children[7];  // Right leg
             const leftArm = player.children[4];   // Left arm
             const rightArm = player.children[5];  // Right arm
