@@ -424,13 +424,9 @@ function updateImpactEffects(delta) {
 }
 
 function checkTerrainCollision(position, hexMap) {
-    // Check blue barrier collision for projectiles
-    const distanceFromCenter = Math.sqrt(
-        position.x * position.x + position.z * position.z
-    );
-    
-    // Blue barrier blocks projectiles too
-    if (distanceFromCenter > hexMapRadius - 11) {
+    // Check hexagonal barrier collision for projectiles
+    const barrierRadius = hexMapRadius - 11;
+    if (!isInsideHexagon(position.x, position.z, barrierRadius)) {
         return true;
     }
     
@@ -807,6 +803,18 @@ if (isMobile) {
     });
 }
 
+// Helper function to check if a point is inside a hexagon
+function isInsideHexagon(x, z, radius) {
+    // Convert to hexagon coordinate system
+    const abs_x = Math.abs(x);
+    const abs_z = Math.abs(z);
+    
+    // Check if point is inside hexagon using the three main constraints
+    return (abs_x <= radius * Math.sqrt(3) / 2) && 
+           (abs_z <= radius) && 
+           (abs_x * Math.sqrt(3) + abs_z <= radius * Math.sqrt(3));
+}
+
 function updatePlayer(delta) {
     if (!hexMap) return;
 
@@ -892,17 +900,18 @@ function updatePlayer(delta) {
     nextPosition.x += velocityDelta.x;
     nextPosition.z += velocityDelta.z;
     
-    // Simple barrier check - just prevent movement outside the radius
-    const distanceFromCenter = Math.sqrt(
-        nextPosition.x * nextPosition.x + 
-        nextPosition.z * nextPosition.z
-    );
-    
-    if (distanceFromCenter > hexMapRadius - 11) {
-        // Move player back to barrier edge
+    // Hexagonal barrier check - prevent movement outside the hexagon
+    const barrierRadius = hexMapRadius - 11;
+    if (!isInsideHexagon(nextPosition.x, nextPosition.z, barrierRadius)) {
+        // Find the closest point on the hexagon boundary
+        // For simplicity, push back towards center
+        const distance = Math.sqrt(nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z);
         const direction = new THREE.Vector3(nextPosition.x, 0, nextPosition.z).normalize();
-        nextPosition.x = direction.x * (hexMapRadius - 11);
-        nextPosition.z = direction.z * (hexMapRadius - 11);
+        
+        // Scale back to be just inside the hexagon
+        const scaleFactor = (barrierRadius * 0.95) / distance;
+        nextPosition.x = nextPosition.x * scaleFactor;
+        nextPosition.z = nextPosition.z * scaleFactor;
         playerVelocity.x = 0;
         playerVelocity.z = 0;
     }
