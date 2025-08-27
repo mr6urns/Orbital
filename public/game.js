@@ -859,14 +859,14 @@ function updatePlayer(delta) {
     const testX = player.position.x + playerVelocity.x * delta;
     const testDistanceX = Math.sqrt(testX * testX + player.position.z * player.position.z);
     if (testDistanceX >= barrierRadius) {
-        playerVelocity.x = 0;
+        playerVelocity.x = -playerVelocity.x * 0.3; // Small bounce back
     }
     
     // Test Z movement  
     const testZ = player.position.z + playerVelocity.z * delta;
     const testDistanceZ = Math.sqrt(player.position.x * player.position.x + testZ * testZ);
     if (testDistanceZ >= barrierRadius) {
-        playerVelocity.z = 0;
+        playerVelocity.z = -playerVelocity.z * 0.3; // Small bounce back
     }
     
     // Now apply the (possibly modified) velocity
