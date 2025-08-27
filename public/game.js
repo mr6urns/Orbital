@@ -849,24 +849,30 @@ function updatePlayer(delta) {
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Hard barrier collision - exactly at the visible wall  
-    const barrierDistance = hexMapRadius - 5 + 1; // Move collision to match wall position
+    // Hard barrier collision - make it slightly smaller than the visible wall
+    const barrierDistance = hexMapRadius - 5; // Collision boundary inside the wall
     if (distanceFromCenter > barrierDistance) {
-        // Calculate direction from center to player
-        const directionX = nextPosition.x - hexMap.center.x;
-        const directionZ = nextPosition.z - hexMap.center.z;
-        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
+        // Stop the player at the barrier
+        const centerToPlayer = new THREE.Vector3(
+            nextPosition.x - hexMap.center.x,
+            0,
+            nextPosition.z - hexMap.center.z
+        ).normalize();
         
-        // Normalize direction
-        const normalizedX = directionX / length;
-        const normalizedZ = directionZ / length;
+        // Clamp position to barrier boundary
+        nextPosition.x = hexMap.center.x + centerToPlayer.x * barrierDistance;
+        nextPosition.z = hexMap.center.z + centerToPlayer.z * barrierDistance;
         
-        // Force player back inside the barrier
-        nextPosition.x = hexMap.center.x + normalizedX * barrierDistance;
-        nextPosition.z = hexMap.center.z + normalizedZ * barrierDistance;
+        // Remove velocity components that would push through the barrier
+        const velocityDotNormal = playerVelocity.x * centerToPlayer.x + playerVelocity.z * centerToPlayer.z;
+        if (velocityDotNormal > 0) {
+            playerVelocity.x -= centerToPlayer.x * velocityDotNormal;
+            playerVelocity.z -= centerToPlayer.z * velocityDotNormal;
+        }
         
-        // Stop all velocity
-        playerVelocity.set(0, playerVelocity.y, 0);
+        // Add a small pushback force
+        playerVelocity.x -= centerToPlayer.x * 2;
+        playerVelocity.z -= centerToPlayer.z * 2;
     }
     
     let terrainHeight = mapHeight;
