@@ -115,7 +115,7 @@ export default function CharacterCreation({ onExplore, showExploreButton = true 
       onExplore(characterData);
     } else {
       // Default behavior - navigate to game
-      window.location.href = '/game-single.html';
+      window.location.href = '/explore-game.html';
     }
   };
 

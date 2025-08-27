@@ -1,13 +1,17 @@
 import React from 'react';
 
 interface GameLauncherProps {
-  onExplore: () => void;
+  onExplore?: () => void;
 }
 
 export default function GameLauncher({ onExplore }: GameLauncherProps) {
   const handleExplore = () => {
-    // Simple navigation to game
-    window.location.href = '/explore-game.html';
+    if (onExplore) {
+      onExplore();
+    } else {
+      // Navigate to the EXPLORE game
+      window.location.href = '/explore-game.html';
+    }
   };
 
   return (
