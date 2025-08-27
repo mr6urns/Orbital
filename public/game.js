@@ -841,47 +841,63 @@ function updatePlayer(delta) {
 
     playerVelocity.multiplyScalar(friction);
 
-    const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
+    // SOLID BARRIER COLLISION SYSTEM
+    // Calculate intended next position
+    let nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Check if player is within map bounds
+    // Define barrier parameters - EXACT match with visible wall
+    const barrierRadius = hexMapRadius - 5; // Exact same as visual wall
+    const playerRadius = 0.5; // Player collision radius
+    const effectiveBarrierRadius = barrierRadius - playerRadius;
+    
+    // Calculate distance from map center
     const distanceFromCenter = Math.sqrt(
-        Math.pow(nextPosition.x - hexMap.center.x, 2) + 
-        Math.pow(nextPosition.z - hexMap.center.z, 2)
+        nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z
     );
     
-    // Hard barrier collision - exactly at the visible wall  
-    const barrierDistance = hexMapRadius - 5 + 1; // Move collision to match wall position
-    if (distanceFromCenter > barrierDistance) {
-        // Calculate direction from center to player
-        const directionX = nextPosition.x - hexMap.center.x;
-        const directionZ = nextPosition.z - hexMap.center.z;
+    // HARD BARRIER COLLISION - IMPOSSIBLE TO PASS THROUGH
+    if (distanceFromCenter > effectiveBarrierRadius) {
+        // Calculate the exact point where player should stop
+        const directionX = nextPosition.x;
+        const directionZ = nextPosition.z;
         const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
         
-        // Normalize direction
-        const normalizedX = directionX / length;
-        const normalizedZ = directionZ / length;
-        
-        // Force player back inside the barrier
-        nextPosition.x = hexMap.center.x + normalizedX * barrierDistance;
-        nextPosition.z = hexMap.center.z + normalizedZ * barrierDistance;
-        
-        // Stop all velocity
-        playerVelocity.set(0, playerVelocity.y, 0);
+        if (length > 0) {
+            // Normalize direction vector
+            const normalizedX = directionX / length;
+            const normalizedZ = directionZ / length;
+            
+            // Place player exactly at barrier edge
+            nextPosition.x = normalizedX * effectiveBarrierRadius;
+            nextPosition.z = normalizedZ * effectiveBarrierRadius;
+            
+            // COMPLETELY STOP all horizontal movement
+            playerVelocity.x = 0;
+            playerVelocity.z = 0;
+            
+            // Add slight pushback force to prevent sticking
+            const pushbackForce = 2.0;
+            playerVelocity.x -= normalizedX * pushbackForce * delta;
+            playerVelocity.z -= normalizedZ * pushbackForce * delta;
+        }
     }
     
-    let terrainHeight = mapHeight;
+    // SECONDARY SAFETY CHECK - Force player back if somehow outside
+    const finalDistanceCheck = Math.sqrt(
+        nextPosition.x * nextPosition.x + nextPosition.z * nextPosition.z
+    );
     
-    let minDistance = Infinity;
-    hexMap.hexPositions.forEach(hexPos => {
-        const distance = Math.sqrt(
-            Math.pow(nextPosition.x - hexPos.x, 2) + 
-            Math.pow(nextPosition.z - hexPos.z, 2)
-        );
+    if (finalDistanceCheck > effectiveBarrierRadius) {
+        // Emergency teleport back inside barrier
+        const angle = Math.atan2(nextPosition.z, nextPosition.x);
+        nextPosition.x = Math.cos(angle) * (effectiveBarrierRadius - 1);
+        nextPosition.z = Math.sin(angle) * (effectiveBarrierRadius - 1);
         
-        if (distance < minDistance) {
-            minDistance = distance;
-            const noiseValue = noise3D(hexPos.x * 0.1, 0, hexPos.z * 0.1);
-            const heightLevels = Math.round((noiseValue + 1) * 1.5);
+        // Zero all horizontal velocity
+        playerVelocity.x = 0;
+        playerVelocity.z = 0;
+    }
+    
             terrainHeight = mapHeight + heightLevels * 0.5;
         }
     });
