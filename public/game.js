@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 4; // Match collision distance
+    const wallRadius = hexMapRadius - 2; // Slightly closer to map edge
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -277,7 +277,7 @@ function createBarrierWall() {
     barrier.userData = {
         type: 'barrier',
         solid: true,
-        radius: wallRadius,
+        radius: hexMapRadius - 4, // Collision radius
         height: wallHeight
     };
     
@@ -431,8 +431,8 @@ function checkTerrainCollision(position, hexMap) {
         Math.pow(position.z - mapCenter.z, 2)
     );
     
-    // Barrier acts as solid wall for projectiles too
-    if (distanceFromCenter > hexMapRadius - 4) {
+    // Enhanced barrier collision for projectiles
+    if (distanceFromCenter >= hexMapRadius - 4) {
         return true;
     }
     
@@ -863,7 +863,7 @@ function updatePlayer(delta) {
     );
     
     // Check collision with barrier wall - solid physical object
-    const barrierDistance = hexMapRadius - 4;
+    const barrierDistance = hexMapRadius - 4; // Match barrier collision radius
     if (distanceFromCenter >= barrierDistance) {
         // Calculate direction from center to player
         const directionX = nextPosition.x - hexMap.center.x;
@@ -886,9 +886,9 @@ function updatePlayer(delta) {
                 playerVelocity.z -= normalZ * velocityDotNormal;
             }
             
-            // Add slight pushback force
-            playerVelocity.x -= normalX * 2;
-            playerVelocity.z -= normalZ * 2;
+            // Add stronger pushback force to prevent clipping
+            playerVelocity.x -= normalX * 5;
+            playerVelocity.z -= normalZ * 5;
         }
     }
     
@@ -1019,7 +1019,7 @@ function animate(currentTime) {
             // Animate hollow hexagon wall with subtle pulsing
             barrierWall.userData.pulseOffset = (barrierWall.userData.pulseOffset || 0) + barrierWall.userData.pulseSpeed * fixedTimeStep;
             const pulse = (Math.sin(barrierWall.userData.pulseOffset) + 1) * 0.5;
-            barrierWall.userData.material.uniforms.opacity.value = barrierWall.userData.originalOpacity * (0.7 + pulse * 0.3);
+            barrierWall.userData.material.uniforms.opacity.value = barrierWall.userData.originalOpacity * (0.8 + pulse * 0.4);
         }
         
         // Rotate starfield slowly
