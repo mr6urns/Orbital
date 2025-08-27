@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const wallHeight = 20;
-    const wallRadius = hexMapRadius - 5; // Barrier moved in 2 units total
+    const wallRadius = hexMapRadius - 4; // Match collision distance
     
     // Create hollow hexagon shape
     const hexShape = new THREE.Shape();
@@ -273,10 +273,22 @@ function createBarrierWall() {
     barrier.position.set(0, mapHeight, 0);
     barrier.rotation.x = -Math.PI / 2; // Rotate to stand upright
     
+    // Make it a solid physics object
+    barrier.userData = {
+        type: 'barrier',
+        solid: true,
+        radius: wallRadius,
+        height: wallHeight
+    };
+    
     barrier.userData = {
         originalOpacity: 0.1,
         material: barrierMaterial,
-        pulseSpeed: 0.5
+        pulseSpeed: 0.5,
+        type: 'barrier',
+        solid: true,
+        radius: wallRadius,
+        height: wallHeight
     };
     
     return barrier;
@@ -412,18 +424,19 @@ function updateImpactEffects(delta) {
 }
 
 function checkTerrainCollision(position, hexMap) {
-    // Check if position is within the hexagonal map bounds
+    // First check barrier collision
     const mapCenter = hexMap.center;
     const distanceFromCenter = Math.sqrt(
         Math.pow(position.x - mapCenter.x, 2) + 
         Math.pow(position.z - mapCenter.z, 2)
     );
     
-    // If outside hexagon bounds, collision with invisible walls
-    if (distanceFromCenter > hexMapRadius) {
+    // Barrier acts as solid wall for projectiles too
+    if (distanceFromCenter > hexMapRadius - 4) {
         return true;
     }
     
+    // Then check terrain collision
     let terrainHeight = mapHeight;
     let minDistance = Infinity;
     
@@ -843,30 +856,38 @@ function updatePlayer(delta) {
 
     const nextPosition = player.position.clone().add(playerVelocity.clone().multiplyScalar(delta));
     
-    // Check if player is within map bounds
+    // Barrier collision - treat as solid physical object
     const distanceFromCenter = Math.sqrt(
         Math.pow(nextPosition.x - hexMap.center.x, 2) + 
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Hard barrier collision - exactly at the visible wall  
-    const barrierDistance = hexMapRadius - 5 + 1; // Move collision to match wall position
+    // Solid barrier collision - cannot pass through at all
+    const barrierDistance = hexMapRadius - 4;
     if (distanceFromCenter > barrierDistance) {
-        // Calculate direction from center to player
-        const directionX = nextPosition.x - hexMap.center.x;
-        const directionZ = nextPosition.z - hexMap.center.z;
-        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
+        // Solid wall - push player back and stop all movement toward barrier
+        const centerToPlayer = new THREE.Vector2(
+            nextPosition.x - hexMap.center.x,
+            nextPosition.z - hexMap.center.z
+        ).normalize();
         
-        // Normalize direction
-        const normalizedX = directionX / length;
-        const normalizedZ = directionZ / length;
+        // Clamp position to barrier boundary
+        nextPosition.x = hexMap.center.x + centerToPlayer.x * barrierDistance;
+        nextPosition.z = hexMap.center.z + centerToPlayer.y * barrierDistance;
         
-        // Force player back inside the barrier
-        nextPosition.x = hexMap.center.x + normalizedX * barrierDistance;
-        nextPosition.z = hexMap.center.z + normalizedZ * barrierDistance;
+        // Stop all velocity components that would push through the barrier
+        const velocityTowardCenter = new THREE.Vector2(playerVelocity.x, playerVelocity.z);
+        const dotProduct = velocityTowardCenter.dot(centerToPlayer);
         
-        // Stop all velocity
-        playerVelocity.set(0, playerVelocity.y, 0);
+        if (dotProduct > 0) {
+            // Remove velocity component toward the barrier
+            playerVelocity.x -= centerToPlayer.x * dotProduct;
+            playerVelocity.z -= centerToPlayer.y * dotProduct;
+        }
+        
+        // Add slight pushback force
+        playerVelocity.x -= centerToPlayer.x * 0.1;
+        playerVelocity.z -= centerToPlayer.y * 0.1;
     }
     
     let terrainHeight = mapHeight;
