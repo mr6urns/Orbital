@@ -424,9 +424,8 @@ function updateImpactEffects(delta) {
 }
 
 function checkTerrainCollision(position, hexMap) {
-    // Check hexagonal barrier collision for projectiles
-    const barrierRadius = hexMapRadius - 11;
-    if (!isInsideHexagon(position.x, position.z, barrierRadius)) {
+    // Check hexagonal barrier collision for projectiles using exact terrain boundary
+    if (!isInsideHexagon(position.x, position.z, hexMapRadius)) {
         return true;
     }
     
@@ -805,26 +804,33 @@ if (isMobile) {
 
 // Helper function to check if a point is inside a hexagon
 function isInsideHexagon(x, z, radius) {
-    // More precise hexagon boundary check using all 6 edges
-    const sqrt3 = Math.sqrt(3);
+    // Use the same logic as terrain generation to be perfectly consistent
+    const hexRadius = 0.866;
+    const segments = Math.ceil(radius / (hexRadius * 2));
     
-    // Check all 6 hexagon edges
-    // Top and bottom edges
-    if (Math.abs(z) > radius) return false;
+    // Check if this position would be within the generated terrain
+    for (let q = -segments; q <= segments; q++) {
+        for (let r = Math.max(-segments, -q-segments); r <= Math.min(segments, -q+segments); r++) {
+            const s = -q - r;
+            
+            if (Math.abs(s) <= segments) {
+                const hexX = hexRadius * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r);
+                const hexZ = hexRadius * (3/2 * r);
+                
+                const distanceFromCenter = Math.sqrt(hexX*hexX + hexZ*hexZ);
+                
+                if (distanceFromCenter <= radius) {
+                    // Check if player position is close to this hex position
+                    const distanceToHex = Math.sqrt((x - hexX) * (x - hexX) + (z - hexZ) * (z - hexZ));
+                    if (distanceToHex < hexRadius * 1.5) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
     
-    // Top-right and bottom-right edges
-    if (sqrt3 * x + z > radius * sqrt3) return false;
-    
-    // Top-left and bottom-left edges  
-    if (sqrt3 * x - z > radius * sqrt3) return false;
-    
-    // Bottom-right and bottom-left edges
-    if (-sqrt3 * x + z > radius * sqrt3) return false;
-    
-    // Bottom-left and top-left edges
-    if (-sqrt3 * x - z > radius * sqrt3) return false;
-    
-    return true;
+    return false;
 }
 
 function updatePlayer(delta) {
@@ -913,8 +919,8 @@ function updatePlayer(delta) {
     nextPosition.z += velocityDelta.z;
     
     // Hexagonal barrier check - prevent movement outside the hexagon
-    const barrierRadius = hexMapRadius - 11;
-    if (!isInsideHexagon(nextPosition.x, nextPosition.z, barrierRadius)) {
+    // Use the exact same radius as the terrain generation
+    if (!isInsideHexagon(nextPosition.x, nextPosition.z, hexMapRadius)) {
         // Stop movement - don't allow position to change
         nextPosition.x = player.position.x;
         nextPosition.z = player.position.z;
