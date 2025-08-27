@@ -1,4 +1,3 @@
-@@ .. @@
      const transition = document.createElement('div');
      transition.style.position = 'fixed';
      transition.style.inset = '0';

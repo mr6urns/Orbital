@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 
 export default defineConfig({
-  root: 'ORBITAL/project',
+  root: '.',
   plugins: [
     react(),
     legacy({
