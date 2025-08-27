@@ -188,7 +188,7 @@ scene.add(starfield);
 // Create perfect hexagonal fog barrier
 function createBarrierWall() {
     const barrierGroup = new THREE.Group();
-    const wallHeight = 15;
+    const wallHeight = 3;
     const wallRadius = hexMapRadius; // Position walls exactly at map edge
 
     // Create exactly 6 large barriers on hexagon edges
@@ -208,21 +208,22 @@ function createBarrierWall() {
         const wallAngle = Math.atan2(z2 - z1, x2 - x1);
         
         // Create single large barrier wall
-        const barrierGeometry = new THREE.PlaneGeometry(wallLength, wallHeight);
+        const barrierGeometry = new THREE.PlaneGeometry(wallLength, wallHeight, 1, 1);
         const barrierMaterial = new THREE.MeshBasicMaterial({
             color: 0x38bdf8,
             transparent: true,
-            opacity: 0.15,
+            opacity: 0.3,
             side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
         
         const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
         barrier.position.set(centerX, mapHeight + wallHeight / 2, centerZ);
-        barrier.rotation.y = wallAngle + Math.PI / 2;
+        barrier.rotation.y = angle;
         
         barrier.userData = {
-            originalOpacity: 0.15,
+            originalOpacity: 0.3,
             pulseSpeed: 0.5,
             pulseOffset: side * Math.PI / 3
         };
