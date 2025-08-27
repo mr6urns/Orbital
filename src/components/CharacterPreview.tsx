@@ -117,7 +117,7 @@ function createCharacter(characterData: CharacterData): THREE.Group {
 
   // Arms - use body color
   const armGeometry = new THREE.CapsuleGeometry(0.1 * scale, 0.4 * scale, 4, 8);
-  const armMaterial = new THREE.MeshPhongMaterial({ color: characterData.bodyColor.color });
+  const armMaterial = new THREE.MeshPhongMaterial({ color: characterData.suit.color });
   
   const leftArm = new THREE.Mesh(armGeometry, armMaterial);
   leftArm.position.set(-0.4 * scale, 0, 0);
@@ -129,7 +129,7 @@ function createCharacter(characterData: CharacterData): THREE.Group {
 
   // Legs - use body color
   const legGeometry = new THREE.CapsuleGeometry(0.12 * scale, 0.4 * scale, 4, 8);
-  const legMaterial = new THREE.MeshPhongMaterial({ color: characterData.bodyColor.color });
+  const legMaterial = new THREE.MeshPhongMaterial({ color: characterData.suit.color });
   
   const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
   leftLeg.position.set(-0.2 * scale, -0.5 * scale, 0);

@@ -557,7 +557,7 @@ function createAstronaut(characterData = {}) {
 
     // Arms
     const armGeometry = new THREE.CapsuleGeometry(0.1 * scale, 0.4 * scale, 4, 8);
-    const armMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
+    const armMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
     
     const leftArm = new THREE.Mesh(armGeometry, armMaterial);
     leftArm.position.set(-0.4 * scale, 0, 0);
@@ -569,7 +569,7 @@ function createAstronaut(characterData = {}) {
 
     // Legs
     const legGeometry = new THREE.CapsuleGeometry(0.12 * scale, 0.4 * scale, 4, 8);
-    const legMaterial = new THREE.MeshPhongMaterial({ color: bodyColor });
+    const legMaterial = new THREE.MeshPhongMaterial({ color: colors.suit });
     
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
     leftLeg.position.set(-0.2 * scale, -0.5 * scale, 0);
