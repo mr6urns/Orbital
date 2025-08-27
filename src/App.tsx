@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Rocket, Users, Lock, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
 import CharacterPreview from './components/CharacterPreview';
 
+console.log('App.tsx loading...');
+
 const characters = [
   {
     id: 'astronaut',
