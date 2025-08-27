@@ -1,7 +1,14 @@
+// Debug logging
+console.log('Game.js loading...');
+
 import * as THREE from 'three';
 import { createNoise2D, createNoise3D } from 'simplex-noise';
 
+console.log('Three.js imported:', THREE);
+console.log('Noise functions imported');
+
 // Scene setup
+console.log('Setting up scene...');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -12,6 +19,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
+console.log('Renderer added to DOM');
 
 // Mobile detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
@@ -722,6 +730,7 @@ function updateCamera() {
 // Initialize game
 const hexMap = generateHexagonalMap(new THREE.Vector3(0, 0, 0));
 player.position.set(0, mapHeight + 2, 0);
+console.log('Game initialized, starting animation loop...');
 
 // Animation loop
 const fixedTimeStep = 1/60;
@@ -751,6 +760,7 @@ function animate(currentTime) {
     renderer.render(scene, camera);
 }
 
+console.log('Starting first animation frame...');
 requestAnimationFrame(animate);
 
 // Keyboard controls (desktop only)
