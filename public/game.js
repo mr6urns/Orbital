@@ -701,9 +701,6 @@ let yaw = 0;
 let pitch = 0;
 const maxPitch = Math.PI * 0.35;
 
-// Animation state
-let isRightArmSwinging = false;
-
 // Touch controls for camera on mobile
 let touchStartX = 0;
 let touchStartY = 0;
@@ -852,7 +849,7 @@ function updatePlayer(delta) {
     );
     
     // Enhanced barrier collision with smooth pushback
-    const barrierDistance = hexMapRadius - 7; // Barrier collision matches the moved wall (back 3 units)
+    const barrierDistance = hexMapRadius - 4; // Barrier collision distance
     if (distanceFromCenter > barrierDistance) {
         const direction = new THREE.Vector3(
             nextPosition.x - hexMap.center.x,
@@ -985,15 +982,6 @@ function updateCamera() {
     camera.position.lerp(targetPosition, cameraSmoothness);
     camera.quaternion.copy(currentCameraRotation);
     camera.up.copy(playerUp);
-
-    // Rotate player body to face camera direction (feet always on ground)
-    const playerRotationMatrix = new THREE.Matrix4();
-    playerRotationMatrix.lookAt(
-        player.position,
-        player.position.clone().add(playerForward),
-        playerUp
-    );
-    player.quaternion.setFromRotationMatrix(playerRotationMatrix);
 }
 
 // Initialize game
