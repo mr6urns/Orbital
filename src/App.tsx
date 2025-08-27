@@ -261,10 +261,23 @@ function App() {
           <div className="p-4 sm:p-6 border-t border-cyan-500/30">
             <div className="flex justify-center">
               <button
-                onClick={saveCharacter}
+                onClick={() => {
+                  // Save character data
+                  const characterData = {
+                    helmet: helmets[selectedHelmet],
+                    suit: suits[selectedSuit],
+                    blaster: blasters[selectedBlaster],
+                    bodyColor: bodyColors[selectedBodyColor]
+                  };
+                  
+                  localStorage.setItem('characterData', JSON.stringify(characterData));
+                  
+                  // Launch game
+                  window.location.href = '/game-single.html';
+                }}
                 className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] hover:scale-105"
               >
-                Save Character
+                Explore
               </button>
             </div>
           </div>
