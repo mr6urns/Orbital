@@ -139,28 +139,6 @@ function setupTouchControls() {
     }
 }
 
-// Lighting
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-directionalLight.position.set(5, 5, 5);
-scene.add(directionalLight);
-const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-scene.add(ambientLight);
-
-// Initialize vectors
-const playerForward = new THREE.Vector3(0, 0, -1);
-const playerUp = new THREE.Vector3(0, 1, 0);
-let targetPlayerUp = new THREE.Vector3(0, 1, 0);
-
-// Hexagonal map parameters
-const hexMapRadius = 50; // Large hexagonal map radius
-const gravity = 9.8; // Standard gravity pointing downward
-let currentGravity = gravity;
-const mapHeight = 2; // Height of the hexagonal terrain
-
-// Noise for terrain generation
-const noise2D = createNoise2D();
-const noise3D = createNoise3D();
-
 // Create starfield dome
 function createStarfield() {
     const starCount = isMobile ? 800 : 1500; // Optimized for dome
@@ -181,17 +159,72 @@ function createStarfield() {
         // Vary the radius for depth
         const radius = domeRadius + Math.random() * domeRadius * 0.5;
         
-            // Rotate wall to be perpendicular to hexagon edge
-            fogWall.rotation.y = wallAngle + Math.PI/2;
-            
-            fogWall.userData = {
-                originalOpacity: fogMaterial.opacity,
-                pulseSpeed: 0.3 + Math.random() * 0.2,
-                pulseOffset: Math.random() * Math.PI * 2
-            };
-            
-            barrierGroup.add(fogWall);
-        }
+        positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i3 + 1] = Math.max(radius * Math.cos(phi), minHeight);
+        positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const material = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: isMobile ? 1.5 : 2,
+        sizeAttenuation: true
+    });
+    
+    return new THREE.Points(geometry, material);
+}
+
+const starfield = createStarfield();
+scene.add(starfield);
+
+// Create barrier wall around the hexagonal map
+function createBarrierWall() {
+    const barrierGroup = new THREE.Group();
+    const wallHeight = 15;
+    const wallSegments = 6; // Hexagonal barrier
+    
+    for (let i = 0; i < wallSegments; i++) {
+        const angle = (i / wallSegments) * Math.PI * 2;
+        const nextAngle = ((i + 1) / wallSegments) * Math.PI * 2;
+        
+        // Calculate wall positions
+        const x1 = Math.cos(angle) * hexMapRadius;
+        const z1 = Math.sin(angle) * hexMapRadius;
+        const x2 = Math.cos(nextAngle) * hexMapRadius;
+        const z2 = Math.sin(nextAngle) * hexMapRadius;
+        
+        // Create fog wall segment
+        const wallLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+        const wallGeometry = new THREE.PlaneGeometry(wallLength, wallHeight);
+        const fogMaterial = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const fogWall = new THREE.Mesh(wallGeometry, fogMaterial);
+        fogWall.position.set(
+            (x1 + x2) / 2,
+            mapHeight + wallHeight / 2,
+            (z1 + z2) / 2
+        );
+        
+        // Calculate wall angle
+        const wallAngle = Math.atan2(z2 - z1, x2 - x1);
+        
+        // Rotate wall to be perpendicular to hexagon edge
+        fogWall.rotation.y = wallAngle + Math.PI/2;
+        
+        fogWall.userData = {
+            originalOpacity: fogMaterial.opacity,
+            pulseSpeed: 0.3 + Math.random() * 0.2,
+            pulseOffset: Math.random() * Math.PI * 2
+        };
+        
+        barrierGroup.add(fogWall);
         
         // Add floating particles along wall
         const particleCount = 6;
@@ -209,6 +242,28 @@ function createStarfield() {
             });
             
             const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(
+                particleX,
+                mapHeight + 2 + Math.random() * (wallHeight - 4),
+                particleZ
+            );
+            
+            particle.userData = {
+                floatSpeed: 0.15 + Math.random() * 0.2,
+                floatOffset: Math.random() * Math.PI * 2,
+                originalY: particle.position.y
+            };
+            
+            barrierGroup.add(particle);
+        }
+    }
+    
+    return barrierGroup;
+}
+
+const barrierWall = createBarrierWall();
+scene.add(barrierWall);
+
 // Health system
 const maxHealth = 100;
 let currentHealth = maxHealth;
