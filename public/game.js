@@ -235,7 +235,7 @@ function createBarrierWall() {
     const barrierMaterial = new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.1,
         side: THREE.DoubleSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending
@@ -246,7 +246,7 @@ function createBarrierWall() {
     barrier.rotation.x = -Math.PI / 2; // Rotate to stand upright
     
     barrier.userData = {
-        originalOpacity: 0.6,
+        originalOpacity: 0.1,
         pulseSpeed: 0.5
     };
     
