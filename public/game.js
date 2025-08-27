@@ -21,6 +21,28 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 console.log('Renderer added to DOM');
 
+// Lighting
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
+const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+scene.add(ambientLight);
+
+// Initialize vectors
+const playerForward = new THREE.Vector3(0, 0, -1);
+const playerUp = new THREE.Vector3(0, 1, 0);
+let targetPlayerUp = new THREE.Vector3(0, 1, 0);
+
+// Hexagonal map parameters
+const hexMapRadius = 50; // Large hexagonal map radius
+const gravity = 9.8; // Standard gravity pointing downward
+let currentGravity = gravity;
+const mapHeight = 2; // Height of the hexagonal terrain
+
+// Noise for terrain generation
+const noise2D = createNoise2D();
+const noise3D = createNoise3D();
+
 // Mobile detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
@@ -159,84 +181,6 @@ function createStarfield() {
         // Vary the radius for depth
         const radius = domeRadius + Math.random() * domeRadius * 0.5;
         
-        // Convert spherical to cartesian coordinates
-        const x = radius * Math.sin(phi) * Math.cos(theta);
-        const y = Math.max(radius * Math.cos(phi), minHeight); // Ensure stars are above map
-        const z = radius * Math.sin(phi) * Math.sin(theta);
-        
-        positions[i3] = x;
-        positions[i3 + 1] = y;
-        positions[i3 + 2] = z;
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
-    const material = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: isMobile ? 1.2 : 1.8,
-        sizeAttenuation: false
-    });
-
-    const stars = new THREE.Points(geometry, material);
-    stars.renderOrder = -1; // Render behind everything else
-    return stars;
-}
-
-const starfield = createStarfield();
-scene.add(starfield);
-
-// Create smooth hexagonal fog barrier
-function createBarrierWall() {
-    const barrierGroup = new THREE.Group();
-    const wallHeight = 15;
-    
-    // Create perfect hexagon barrier that matches the map exactly
-    const hexRadius = hexMapRadius - 1; // Slightly inside the collision boundary
-    
-    for (let side = 0; side < 6; side++) {
-        // Calculate exact hexagon vertices
-        const angle1 = (side * Math.PI) / 3;
-        const angle2 = ((side + 1) * Math.PI) / 3;
-        
-        // Perfect hexagon corner points
-        const x1 = Math.cos(angle1) * hexRadius;
-        const z1 = Math.sin(angle1) * hexRadius;
-        const x2 = Math.cos(angle2) * hexRadius;
-        const z2 = Math.sin(angle2) * hexRadius;
-        
-        // Calculate wall properties
-        const sideLength = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
-        const centerX = (x1 + x2) / 2;
-        const centerZ = (z1 + z2) / 2;
-        const wallAngle = Math.atan2(z2 - z1, x2 - x1);
-        
-        // Create 3 fog layers for depth
-        for (let layer = 0; layer < 3; layer++) {
-            const layerOffset = (layer - 1) * 0.3;
-            
-            const fogGeometry = new THREE.PlaneGeometry(sideLength, wallHeight, 1, 1);
-            
-            const fogMaterial = new THREE.MeshBasicMaterial({
-                color: 0x38bdf8,
-                transparent: true,
-                opacity: 0.015 + layer * 0.008,
-                side: THREE.DoubleSide,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
-            });
-            
-            const fogWall = new THREE.Mesh(fogGeometry, fogMaterial);
-            
-            // Position wall exactly on hexagon edge
-            const offsetX = Math.cos(wallAngle + Math.PI/2) * layerOffset;
-            const offsetZ = Math.sin(wallAngle + Math.PI/2) * layerOffset;
-            
-            fogWall.position.set(
-                centerX + offsetX,
-                mapHeight + wallHeight / 2,
-                centerZ + offsetZ
-            );
-            
             // Rotate wall to be perpendicular to hexagon edge
             fogWall.rotation.y = wallAngle + Math.PI/2;
             
