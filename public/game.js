@@ -849,8 +849,8 @@ function updatePlayer(delta) {
         Math.pow(nextPosition.z - hexMap.center.z, 2)
     );
     
-    // Absolute barrier collision - cannot pass through at all
-    const barrierDistance = hexMapRadius - 5; // Collision at the visible wall
+    // Hard barrier collision - exactly at the visible wall  
+    const barrierDistance = hexMapRadius - 5 + 1; // Move collision to match wall position
     if (distanceFromCenter > barrierDistance) {
         // Calculate direction from center to player
         const directionX = nextPosition.x - hexMap.center.x;
